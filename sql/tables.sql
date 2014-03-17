@@ -1,8 +1,8 @@
 /* Michael Clayton 2014 */
 
 CREATE TABLE DEPARTMENT (
-deptid      int             NOT NULL,
-dname       varchar(50),
+deptid      none            NOT NULL,
+dname       varchar(50)     CHECK (dname='hi'),
 location    varchar(50),
 PRIMARY KEY(deptid)
 );
