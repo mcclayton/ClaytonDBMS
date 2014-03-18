@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/gsp.jar"/>
+	<classpathentry kind="lib" path="lib/gsp.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/Users/mostly_mike/Desktop/GitHub Repos/ClaytonDBMS/javadoc/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

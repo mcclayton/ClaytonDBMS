@@ -1,4 +1,4 @@
-package dbms.analyzer;
+package dbms.parser;
 
 import gudusoft.gsqlparser.EDbVendor;
 import gudusoft.gsqlparser.ESqlStatementType;
