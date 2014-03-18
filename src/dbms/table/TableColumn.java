@@ -1,19 +1,23 @@
 package dbms.table;
 
-import java.util.ArrayList;
 
 public class TableColumn {
-	private static final int MAX_ATTRIBUTE_NAME_LENGTH = 256;
-
+	
+	
 	private String relationName;
 	private String attributeName;
 	private String attributeType;
-	private ArrayList<String> constraintList;	// TODO: Need to make this a valid constraint system
+	private String checkConstraint;	// TODO: Need to make this a valid constraint expression and validate the expression
+	
+	/* Column Constraints */
+	String checkExpression = null;								// Domain constraint for attribute
+	private static final int MAX_ATTRIBUTE_NAME_LENGTH = 256;	// Limit the name size of the attribute
 
-	public TableColumn(String relationName, String attributeName, String attributeType, ArrayList<String> constraintList) {
+	public TableColumn(String relationName, String attributeName, String attributeType, String checkConstraint) {
 		this.relationName = relationName;
 		this.attributeName = attributeName;
 		this.attributeType = attributeType;
+		this.checkConstraint = checkConstraint;
 
 		if (!isValidAttributeName(attributeName)) {
 			// TODO: Throw an exception
@@ -49,6 +53,7 @@ public class TableColumn {
 	}
 	
 	private int getAttributeType(String attributeString) {
+		// TODO: Perhaps I need to remove spaces
 		String nameLower = attributeString.toLowerCase();
 		if (nameLower.equals("int")) {
 			return 0;
@@ -66,5 +71,5 @@ public class TableColumn {
 	public String getTableName() {return this.relationName;}
 	public String getColumnName() {return this.attributeName;}
 	public String getAttributeType() {return this.attributeType;}
-	public ArrayList<String> getConstraintList() {return this.constraintList;}
+	public String getCheckConstraint() {return this.checkConstraint;}
 }

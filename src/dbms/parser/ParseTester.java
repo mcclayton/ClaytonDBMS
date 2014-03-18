@@ -5,11 +5,11 @@ import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableRow;
+import dbms.table.TableSearch;
 
 
 public class ParseTester {
@@ -19,31 +19,44 @@ public class ParseTester {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/tables.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
+		//sqlparser.sqltext = "CREATE TABLE TEST_TABLE (deptid	int	PRIMARY KEY, deptname varchar(50) PRIMARY KEY);";
+		
 		int ret = sqlparser.parse();
 		if (ret == 0) {
 			// Parse was successful
-
-			// Key is Table Name, value is table
-			HashMap<String, Table> tableMap = new HashMap<String, Table>();
 			
 			for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
 				Table table = ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) sqlparser.sqlstatements.get(i));
-				tableMap.put(table.getTableName(), table);
+				TableSearch.addTable(table.getTableName(), table);
 			}
 			
 			
 			// Print Each Table
-			for (Table table : tableMap.values()) {
+			for (Table table : TableSearch.getTableMap().values()) {
 				// Print table name
 				System.out.println("\nTABLE_NAME: "+table.getTableName());
 				
+				if (table.getPrimaryKeyConstraint() != null) {
+					System.out.print("Primary Key (");
+					for (TableColumn column : table.getPrimaryKeyConstraint().getPrimaryColumnList()) {
+						System.out.print(column.getColumnName()+",");
+					}
+					System.out.println(")");
+				} else {
+					System.out.println("PRIMARY KEY WAS NULL...");
+				}
+				
 				// Print column names
 				for (TableColumn column : table.getTableColumns()) {
-					System.out.print(column.getColumnName()+"\t");
+					System.out.print("COLUMN: "+column.getColumnName());
+					if (column.getCheckConstraint() != null) {
+						System.out.println("\t\t CONSTRAINT: "+column.getCheckConstraint());
+					} else {
+						System.out.println("");
+					}
 				}
-				System.out.print("\n");
 				
 				// Add dummy rows
 				ArrayList<Object> elements = new ArrayList<Object>();

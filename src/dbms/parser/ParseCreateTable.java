@@ -8,23 +8,27 @@ import java.util.ArrayList;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
+import dbms.table.TableSearch;
+import dbms.table.constraints.PrimaryKeyConstraint;
 
 
 public class ParseCreateTable {
 	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt) {
 		String tableName = pStmt.getTargetTable().toString();
-		
+
 		// Parse Columns
 		ArrayList<TableColumn> tableColumnList = new ArrayList<TableColumn>();
 		TColumnDefinition column;
 		String columnName;
 		String columnDataType;
+		String columnCheckConstraint = null;
+		PrimaryKeyConstraint primaryKey = new PrimaryKeyConstraint();
 		for(int i=0;i<pStmt.getColumnList().size();i++){
 			column = pStmt.getColumnList().getColumn(i);
-			
+
 			// Get column name
 			columnName = column.getColumnName().toString();
-			
+
 			// Get the column data type
 			if (column.getDatatype() != null) {
 				columnDataType = column.getDatatype().toString();
@@ -33,73 +37,83 @@ public class ParseCreateTable {
 				System.out.println("Create_Table Error:\nColumn '"+columnName+"' cannot have null datatype.");
 				return null;
 			}
-			
-			// TODO: Add column constraints
+
+			// Get in-line column 'check' constraints
 			if (column.getConstraints() != null) {
-				System.out.println("\t("+columnName+") inline constraints:");
 				for(int j=0;j<column.getConstraints().size();j++){
-					printConstraint(column.getConstraints().getConstraint(j),false);
+					columnCheckConstraint = getCheckConstraint(column.getConstraints().getConstraint(j));
 				}
 			}	
-			
-			// TODO: Add constraint list to column instead of null
-			tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, null));
+
+			// Add the new column to the column list
+			tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, columnCheckConstraint));
 		}		
-		
-		// TODO: Add outline constraints
+
+		// TODO: Add table key constraints
 		if(pStmt.getTableConstraints().size() > 0) {
-			//System.out.println("\toutline constraints:");
+			System.out.println("\toutline constraints:");
 			for(int i=0;i<pStmt.getTableConstraints().size();i++) {
-				printConstraint(pStmt.getTableConstraints().getConstraint(i), true);
+				getOutlineConstraints(pStmt.getTableConstraints().getConstraint(i), true, primaryKey, tableColumnList);
 				System.out.println("");
 			}
 		}
-		
+
 		Table table = new Table(tableName, tableColumnList);
+		table.setPrimaryKeyConstraint(primaryKey);
 		System.out.println("Table created successfully");
 		return table;
 	}
-	
-	
-	protected static void printConstraint(TConstraint constraint, Boolean outline) {
-		System.out.println("***"+constraint.getConstraint_type().toString());
-		
+
+
+	protected static String getCheckConstraint(TConstraint constraint) {
 		switch(constraint.getConstraint_type()){
-		case notnull:
-			System.out.println("\t\t-not null-");
-			break;
-		case primary_key:
-			System.out.println("\t\t-primary key-");
-			if (outline){
-				String lcstr = "";
-				if (constraint.getColumnList() != null){
-					for(int k=0;k<constraint.getColumnList().size();k++){
-						if (k !=0 ){lcstr = lcstr+",";}
-						lcstr = lcstr+constraint.getColumnList().getObjectName(k).toString();
-					}
-					System.out.println("\t\tprimary key columns:"+lcstr);
-				}
-			}
-			break;
-		case unique:
-			System.out.println("\t\t-unique key-");
-			if(outline){
-				String lcstr="";
-				if (constraint.getColumnList() != null){
-					for(int k=0;k<constraint.getColumnList().size();k++){
-						if (k !=0 ){lcstr = lcstr+",";}
-						lcstr = lcstr+constraint.getColumnList().getObjectName(k).toString();
-					}
-				}
-				System.out.println("\t\tcolumns:"+lcstr);
-			}
-			break;
 		case check:
-			System.out.println("\t\t-check:-"+constraint.getCheckCondition().toString());
+			return constraint.getCheckCondition().toString();
+		case primary_key:
+			// TODO: Throw Exception
+			System.out.println("Create_Table Error: Primary key must be specified after all attributes are listed.");
 			break;
 		case foreign_key:
 		case reference:
-			System.out.println("\t\t-foreign key-");
+			// TODO: Throw Exception
+			System.out.println("Create_Table Error: Foreign keys must be specified after all attributes are listed..");
+			break;
+		default:
+			// TODO: Throw Exception
+			System.out.println("Create_Table Error: Only 'CHECK' domain constraints are supported in-line. Cannot specify '"+constraint.toString()+"' constraint here.");
+			break;
+		}
+		// No valid check constraint found
+		return null;
+	}
+
+
+	protected static void getOutlineConstraints(TConstraint constraint, Boolean outline, PrimaryKeyConstraint primaryKey, ArrayList<TableColumn> columnList) {
+		// TODO: Ensure that the user HAS to specify a primary key
+
+		switch(constraint.getConstraint_type()){
+		case primary_key:
+			if (constraint.getColumnList() != null) {
+				if (!primaryKey.getPrimaryColumnList().isEmpty()) {
+					// TODO: Throw Exception
+					System.out.println("Create_Table Error: Only one primary key or composite primary key is allowed per table.");
+					return;
+				}
+				for(int k=0; k<constraint.getColumnList().size(); k++) {
+					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
+					if (column != null) {
+						primaryKey.addPrimaryColumn(column);
+					} else {
+						// TODO: Throw Exception
+						System.out.println("Create_Table Error: Specifying primary key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.");
+						return;
+					}
+				}
+			}
+			break;
+		case foreign_key:
+		case reference:
+			System.out.println("\t\t>foreign key");
 			if(outline){
 				String lcstr="";
 				if (constraint.getColumnList() != null){
@@ -121,6 +135,8 @@ public class ParseCreateTable {
 			}
 			break;
 		default:
+			// TODO: Throw Exception
+			System.out.println("Create_Table Error: Expected primary or foreign key constraint. Cannot specify '"+constraint.toString()+"' constraint here.");
 			break;
 		}
 	}
