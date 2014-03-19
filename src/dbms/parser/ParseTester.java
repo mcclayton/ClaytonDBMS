@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
+import dbms.table.TableColumn.DataType;
 import dbms.table.TableRow;
 import dbms.table.TableSearch;
 import dbms.table.constraints.ForeignKeyConstraint;
@@ -74,9 +75,18 @@ public class ParseTester {
 					}
 				}
 				
-				// Print column names
+				// Print column names/types/constraints
 				for (TableColumn column : table.getTableColumns()) {
 					System.out.print("COLUMN: "+column.getColumnName());
+					
+					if (column.getAttributeDataType() != null) {
+						if (column.getAttributeDataType() == DataType.VARCHAR) {
+							System.out.print("\t\tDATATYPE: "+column.getAttributeDataType().toString()+" "+column.getVarCharLength());
+						} else {
+							System.out.print("\t\tDATATYPE: "+column.getAttributeDataType().toString());
+						}
+					}
+					
 					if (column.getCheckConstraint() != null) {
 						System.out.println("\t\t CONSTRAINT: "+column.getCheckConstraint());
 					} else {

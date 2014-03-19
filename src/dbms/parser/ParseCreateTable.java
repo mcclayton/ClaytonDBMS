@@ -69,7 +69,11 @@ public class ParseCreateTable {
 			try {
 				tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, columnCheckConstraint));
 			} catch (AttributeException e) {
-				throw new CreateTableException("\n\t"+e.getMessage());
+				if (tableName != null) {
+					throw new CreateTableException("\n\t|\n\t\\-->\t"+e.getMessage(), tableName);
+				} else {
+					throw new CreateTableException("\n\t|\n\t\\-->\t"+e.getMessage());
+				}
 			}
 		}		
 
@@ -152,6 +156,7 @@ public class ParseCreateTable {
 				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
 					TableColumn column = TableSearch.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
 					if (column != null) {
+						// TODO: Make sure column and referenced column both have the same type
 						foreignKey.addReferencedColumn(column);
 					} else {
 						throw new CreateTableException("Foreign key references an invalid attribute '"+constraint.getReferencedColumnList().getObjectName(k).toString()+"'.", tableName);
