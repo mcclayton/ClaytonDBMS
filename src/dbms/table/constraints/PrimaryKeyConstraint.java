@@ -14,8 +14,7 @@ public class PrimaryKeyConstraint {
 	
 	public PrimaryKeyConstraint() {
 		this.primaryColumnList = new ArrayList<TableColumn>();
-	}
-	
+	}	
 	
 	/* Getters and Setters */
 	public ArrayList<TableColumn> getPrimaryColumnList() {return this.primaryColumnList;}

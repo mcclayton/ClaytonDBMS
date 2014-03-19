@@ -10,6 +10,7 @@ import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableRow;
 import dbms.table.TableSearch;
+import dbms.table.constraints.ForeignKeyConstraint;
 
 
 public class ParseTester {
@@ -38,6 +39,7 @@ public class ParseTester {
 				// Print table name
 				System.out.println("\nTABLE_NAME: "+table.getTableName());
 				
+				// Print primary key constraint
 				if (table.getPrimaryKeyConstraint() != null) {
 					System.out.print("Primary Key (");
 					for (TableColumn column : table.getPrimaryKeyConstraint().getPrimaryColumnList()) {
@@ -46,6 +48,19 @@ public class ParseTester {
 					System.out.println(")");
 				} else {
 					System.out.println("PRIMARY KEY WAS NULL...");
+				}
+				
+				// Print foreign key constraint
+				if (!table.getForeignKeyConstraintList().isEmpty()) {
+					for (ForeignKeyConstraint foreignKey : table.getForeignKeyConstraintList()) {
+						System.out.println("FOREIGN KEY:");
+						for (TableColumn column : foreignKey.getColumnList()) {
+							System.out.println("\tCOLUMN: "+column.getColumnName());
+						}
+						for (TableColumn column : foreignKey.getReferencedColumnList()) {
+							System.out.println("\tREFERENCED_COLUMN: "+column.getColumnName());
+						}
+					}
 				}
 				
 				// Print column names

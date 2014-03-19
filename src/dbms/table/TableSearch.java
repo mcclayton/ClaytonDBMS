@@ -12,6 +12,10 @@ public class TableSearch {
 	public static Table getTable(String tableName) {
 		return TABLE_MAP.get(tableName);
 	}
+	
+	public static boolean tableExists(String tableName) {
+		return TABLE_MAP.containsKey(tableName);
+	}
 
 	public static void addTable(String tableNameKey, Table tableValue) {
 		if (TABLE_MAP.containsKey(tableNameKey)) {

@@ -34,6 +34,7 @@ public class Table {
 	
 	
 	public Table(String tableName, ArrayList<TableColumn> tableColumns, ArrayList<TableRow> tableRows) {
+		this.foreignKeyList = new ArrayList<ForeignKeyConstraint>();
 		this.tableName = tableName;
 		this.tableRows = tableRows;
 		this.tableColumns = tableColumns;

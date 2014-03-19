@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableSearch;
+import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
 
 
@@ -23,6 +24,7 @@ public class ParseCreateTable {
 		String columnDataType;
 		String columnCheckConstraint = null;
 		PrimaryKeyConstraint primaryKey = new PrimaryKeyConstraint();
+		ArrayList<ForeignKeyConstraint> foreignKeyList = new ArrayList<ForeignKeyConstraint>();
 		for(int i=0;i<pStmt.getColumnList().size();i++){
 			column = pStmt.getColumnList().getColumn(i);
 
@@ -53,13 +55,14 @@ public class ParseCreateTable {
 		if(pStmt.getTableConstraints().size() > 0) {
 			System.out.println("\toutline constraints:");
 			for(int i=0;i<pStmt.getTableConstraints().size();i++) {
-				getOutlineConstraints(pStmt.getTableConstraints().getConstraint(i), true, primaryKey, tableColumnList);
+				getOutlineConstraints(pStmt.getTableConstraints().getConstraint(i), primaryKey, foreignKeyList, tableColumnList);
 				System.out.println("");
 			}
 		}
 
 		Table table = new Table(tableName, tableColumnList);
 		table.setPrimaryKeyConstraint(primaryKey);
+		table.setForeignKeyConstraintList(foreignKeyList);
 		System.out.println("Table created successfully");
 		return table;
 	}
@@ -88,7 +91,7 @@ public class ParseCreateTable {
 	}
 
 
-	protected static void getOutlineConstraints(TConstraint constraint, Boolean outline, PrimaryKeyConstraint primaryKey, ArrayList<TableColumn> columnList) {
+	protected static void getOutlineConstraints(TConstraint constraint, PrimaryKeyConstraint primaryKey, ArrayList<ForeignKeyConstraint> foreignKeyList, ArrayList<TableColumn> columnList) {
 		// TODO: Ensure that the user HAS to specify a primary key
 
 		switch(constraint.getConstraint_type()){
@@ -113,26 +116,45 @@ public class ParseCreateTable {
 			break;
 		case foreign_key:
 		case reference:
-			System.out.println("\t\t>foreign key");
-			if(outline){
-				String lcstr="";
-				if (constraint.getColumnList() != null){
-					for(int k=0;k<constraint.getColumnList().size();k++){
-						if (k !=0 ){lcstr = lcstr+",";}
-						lcstr = lcstr+constraint.getColumnList().getObjectName(k).toString();
-					}
-				}
-				System.out.println("\t\tcolumns:"+lcstr);
+			if (!TableSearch.tableExists(constraint.getReferencedObject().toString())) {
+				// TODO: Throw Exception
+				System.out.println("Create_Table Error: Foreign key references table that does not exist.");
+				return;
 			}
-			System.out.println("\t\treferenced table:"+constraint.getReferencedObject().toString());
+			
+			// Create foreign key from referenced table name
+			ForeignKeyConstraint foreignKey = new ForeignKeyConstraint(TableSearch.getTable(constraint.getReferencedObject().toString()));
+			
+			// Add the table columns to the foreign key that will reference other attributes
+			if (constraint.getColumnList() != null) {
+				for(int k=0; k<constraint.getColumnList().size(); k++) {
+					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
+					if (column != null) {
+						foreignKey.addColumn(column);
+					} else {
+						// TODO: Throw Exception
+						System.out.println("Create_Table Error: Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.");
+						return;
+					}					
+				}
+			}
+			
+			// Add the referenced columns to the foreign key
 			if (constraint.getReferencedColumnList() != null){
-				String lcstr="";
-				for(int k=0;k<constraint.getReferencedColumnList().size();k++){
-					if (k !=0 ){lcstr = lcstr+",";}
-					lcstr = lcstr+constraint.getReferencedColumnList().getObjectName(k).toString();
+				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
+					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getReferencedColumnList().getObjectName(k).toString());
+					if (column != null) {
+						foreignKey.addReferencedColumn(column);
+					} else {
+						// TODO: Throw Exception
+						System.out.println("Create_Table Error: Foreign key references an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.");
+						return;
+					}					
 				}
-				System.out.println("\t\treferenced columns:"+lcstr);
 			}
+			
+			// Add the foreignKey to the foreignKeyList
+			foreignKeyList.add(foreignKey);
 			break;
 		default:
 			// TODO: Throw Exception
