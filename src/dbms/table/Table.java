@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
+import dbms.table.exceptions.AttributeException;
+import dbms.table.exceptions.CreateTableException;
 
 public class Table {
 	
@@ -33,7 +35,7 @@ public class Table {
 	
 	
 	
-	public Table(String tableName, ArrayList<TableColumn> tableColumns, ArrayList<TableRow> tableRows) {
+	public Table(String tableName, ArrayList<TableColumn> tableColumns, ArrayList<TableRow> tableRows) throws CreateTableException {
 		this.foreignKeyList = new ArrayList<ForeignKeyConstraint>();
 		this.tableName = tableName;
 		this.tableRows = tableRows;
@@ -43,16 +45,15 @@ public class Table {
 			this.tableRows = new ArrayList<TableRow>();
 		}
 		if (tableName == null) {
-			// TODO: Throw an exception
-			System.out.println("Error: No table name specified.");
+			throw new CreateTableException("Table cannot have null name.");
 		}
 		if (tableColumns == null || tableColumns.size() <= 0) {
-			// TODO: Throw an exception
-			System.out.println("Error: No attributes specified.");
+			throw new CreateTableException("At least one attribute must be specified to create a table.", this.tableName);
 		}
+		
 	}
 	
-	public Table(String tableName, ArrayList<TableColumn> tableColumns) {
+	public Table(String tableName, ArrayList<TableColumn> tableColumns) throws CreateTableException {
 		this(tableName, tableColumns, null);
 	}
 	
@@ -60,14 +61,14 @@ public class Table {
 		this.tableRows.add(row);
 	}
 	
-	public void addColumn(String columnName) {
+	public void addColumn(TableColumn column) throws AttributeException {
+		String columnName = column.getColumnName();
 		for (int i=0; i<tableColumns.size(); i++) {
-			if (tableColumns.get(i).equals(columnName)) {
-				// TODO: Throw an exception
-				System.out.println("Error: Column '"+columnName+"' already exists in table '"+this.tableName+"'");
-				return;
+			if (tableColumns.get(i).equals(column)) {
+				throw new AttributeException("Table attribute names must be unique. Attribute '"+columnName+"' is already defined in this table.");
 			}
 		}
+		this.tableColumns.add(column);
 	}
 	
 	

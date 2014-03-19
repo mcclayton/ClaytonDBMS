@@ -3,6 +3,8 @@ package dbms.table;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import dbms.table.exceptions.CreateTableException;
+
 public class TableSearch {
 
 	// Key is Table Name, value is table
@@ -17,10 +19,9 @@ public class TableSearch {
 		return TABLE_MAP.containsKey(tableName);
 	}
 
-	public static void addTable(String tableNameKey, Table tableValue) {
+	public static void addTable(String tableNameKey, Table tableValue) throws CreateTableException {
 		if (TABLE_MAP.containsKey(tableNameKey)) {
-			// TODO: Throw an exception
-			System.out.println("Error: Could not add table. Table with that name already exists.");
+			throw new CreateTableException("Table with that name already exists.", tableNameKey);
 		} else {
 			TABLE_MAP.put(tableNameKey, tableValue);
 		}

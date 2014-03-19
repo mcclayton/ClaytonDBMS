@@ -11,11 +11,24 @@ import dbms.table.TableColumn;
 import dbms.table.TableSearch;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
+import dbms.table.exceptions.AttributeException;
+import dbms.table.exceptions.CreateTableException;
 
 
 public class ParseCreateTable {
-	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt) {
-		String tableName = pStmt.getTargetTable().toString();
+	private static String tableName = null;
+	
+	/* 
+	 * Creates a new table from parsing a CreateTableStatement.
+	 * 
+	 * If successful, adds the new table to the TABLE_MAP
+	 * If unsuccessful, throws an exception and table is not created.
+	 */
+	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt) throws CreateTableException {
+		tableName = pStmt.getTargetTable().toString();
+		if (tableName == null) {
+			throw new CreateTableException("Table cannot have null name.");
+		}
 
 		// Parse Columns
 		ArrayList<TableColumn> tableColumnList = new ArrayList<TableColumn>();
@@ -25,7 +38,7 @@ public class ParseCreateTable {
 		String columnCheckConstraint = null;
 		PrimaryKeyConstraint primaryKey = new PrimaryKeyConstraint();
 		ArrayList<ForeignKeyConstraint> foreignKeyList = new ArrayList<ForeignKeyConstraint>();
-		for(int i=0;i<pStmt.getColumnList().size();i++){
+		for(int i=0; i<pStmt.getColumnList().size(); i++){
 			column = pStmt.getColumnList().getColumn(i);
 
 			// Get column name
@@ -33,11 +46,10 @@ public class ParseCreateTable {
 
 			// Get the column data type
 			if (column.getDatatype() != null) {
+				// TODO: Do further validation of datatype 
 				columnDataType = column.getDatatype().toString();
 			} else {
-				// TODO: Throw Exception
-				System.out.println("Create_Table Error:\nColumn '"+columnName+"' cannot have null datatype.");
-				return null;
+				throw new CreateTableException("Column '"+columnName+"' cannot have null datatype.", tableName);
 			}
 
 			// Get in-line column 'check' constraints
@@ -48,68 +60,68 @@ public class ParseCreateTable {
 			}	
 
 			// Add the new column to the column list
-			tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, columnCheckConstraint));
+			try {
+				// Make sure attribute name is unique
+				for (TableColumn tbleColumn : tableColumnList) {
+					if (tableName.equals(tbleColumn.getTableName()) && tbleColumn.getColumnName().equals(columnName)) {
+						throw new CreateTableException("Table attribute names must be unique. Attribute '"+columnName+"' is already defined in this table.", tableName);
+					}
+				}
+				tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, columnCheckConstraint));
+			} catch (AttributeException e) {
+				System.out.println(e.getMessage());
+			}
 		}		
 
-		// TODO: Add table key constraints
+		// Get table key constraints
 		if(pStmt.getTableConstraints().size() > 0) {
-			System.out.println("\toutline constraints:");
-			for(int i=0;i<pStmt.getTableConstraints().size();i++) {
-				getOutlineConstraints(pStmt.getTableConstraints().getConstraint(i), primaryKey, foreignKeyList, tableColumnList);
-				System.out.println("");
+			for(int i=0; i<pStmt.getTableConstraints().size(); i++) {
+				getTableKeyConstraints(pStmt.getTableConstraints().getConstraint(i), primaryKey, foreignKeyList, tableColumnList);
 			}
 		}
 
 		Table table = new Table(tableName, tableColumnList);
-		table.setPrimaryKeyConstraint(primaryKey);
+		if (!primaryKey.getPrimaryColumnList().isEmpty()) {
+			table.setPrimaryKeyConstraint(primaryKey);
+		} else {
+			throw new CreateTableException("No primary key specified for this table.", tableName);
+		}
 		table.setForeignKeyConstraintList(foreignKeyList);
+		TableSearch.addTable(table.getTableName(), table);
 		System.out.println("Table created successfully");
 		return table;
 	}
 
 
-	protected static String getCheckConstraint(TConstraint constraint) {
+	protected static String getCheckConstraint(TConstraint constraint) throws CreateTableException {
 		switch(constraint.getConstraint_type()){
 		case check:
 			return constraint.getCheckCondition().toString();
 		case primary_key:
-			// TODO: Throw Exception
-			System.out.println("Create_Table Error: Primary key must be specified after all attributes are listed.");
-			break;
+			throw new CreateTableException("Primary key must be specified after all attributes are listed.", tableName);
 		case foreign_key:
 		case reference:
-			// TODO: Throw Exception
-			System.out.println("Create_Table Error: Foreign keys must be specified after all attributes are listed..");
-			break;
+			throw new CreateTableException("Foreign keys must be specified after all attributes are listed.", tableName);
 		default:
-			// TODO: Throw Exception
-			System.out.println("Create_Table Error: Only 'CHECK' domain constraints are supported in-line. Cannot specify '"+constraint.toString()+"' constraint here.");
-			break;
+			throw new CreateTableException("Only 'CHECK' domain constraints are supported in-line. Cannot specify '"+constraint.toString()+"' constraint here.", tableName);
 		}
-		// No valid check constraint found
-		return null;
 	}
 
 
-	protected static void getOutlineConstraints(TConstraint constraint, PrimaryKeyConstraint primaryKey, ArrayList<ForeignKeyConstraint> foreignKeyList, ArrayList<TableColumn> columnList) {
-		// TODO: Ensure that the user HAS to specify a primary key
+	protected static void getTableKeyConstraints(TConstraint constraint, PrimaryKeyConstraint primaryKey, ArrayList<ForeignKeyConstraint> foreignKeyList, ArrayList<TableColumn> columnList) throws CreateTableException {
 
 		switch(constraint.getConstraint_type()){
 		case primary_key:
 			if (constraint.getColumnList() != null) {
 				if (!primaryKey.getPrimaryColumnList().isEmpty()) {
-					// TODO: Throw Exception
-					System.out.println("Create_Table Error: Only one primary key or composite primary key is allowed per table.");
-					return;
+					throw new CreateTableException("Only one primary key or composite primary key is allowed per table.", tableName);
 				}
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
 					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
 						primaryKey.addPrimaryColumn(column);
 					} else {
-						// TODO: Throw Exception
-						System.out.println("Create_Table Error: Specifying primary key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.");
-						return;
+						throw new CreateTableException("Specifying primary key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
 					}
 				}
 			}
@@ -117,9 +129,7 @@ public class ParseCreateTable {
 		case foreign_key:
 		case reference:
 			if (!TableSearch.tableExists(constraint.getReferencedObject().toString())) {
-				// TODO: Throw Exception
-				System.out.println("Create_Table Error: Foreign key references table that does not exist.");
-				return;
+				throw new CreateTableException("Foreign key references table that does not exist.", tableName);
 			}
 			
 			// Create foreign key from referenced table name
@@ -132,9 +142,7 @@ public class ParseCreateTable {
 					if (column != null) {
 						foreignKey.addColumn(column);
 					} else {
-						// TODO: Throw Exception
-						System.out.println("Create_Table Error: Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.");
-						return;
+						throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
 					}					
 				}
 			}
@@ -142,13 +150,11 @@ public class ParseCreateTable {
 			// Add the referenced columns to the foreign key
 			if (constraint.getReferencedColumnList() != null){
 				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
-					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getReferencedColumnList().getObjectName(k).toString());
+					TableColumn column = TableSearch.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
 					if (column != null) {
 						foreignKey.addReferencedColumn(column);
 					} else {
-						// TODO: Throw Exception
-						System.out.println("Create_Table Error: Foreign key references an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.");
-						return;
+						throw new CreateTableException("Foreign key references an invalid attribute '"+constraint.getReferencedColumnList().getObjectName(k).toString()+"'.", tableName);
 					}					
 				}
 			}
@@ -157,9 +163,7 @@ public class ParseCreateTable {
 			foreignKeyList.add(foreignKey);
 			break;
 		default:
-			// TODO: Throw Exception
-			System.out.println("Create_Table Error: Expected primary or foreign key constraint. Cannot specify '"+constraint.toString()+"' constraint here.");
-			break;
+			throw new CreateTableException("Expected primary or foreign key constraint. Cannot specify '"+constraint.toString()+"' constraint here.", tableName);
 		}
 	}
 
