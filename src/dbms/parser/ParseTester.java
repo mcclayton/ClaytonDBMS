@@ -11,6 +11,7 @@ import dbms.table.TableColumn;
 import dbms.table.TableRow;
 import dbms.table.TableSearch;
 import dbms.table.constraints.ForeignKeyConstraint;
+import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 
 
@@ -34,9 +35,12 @@ public class ParseTester {
 					// Try to parse and create a new table
 					// New table will be added to TABLE_MAP if successful
 					ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) sqlparser.sqlstatements.get(i));
-				} catch (CreateTableException e) {
+				} catch (CreateTableException cTabExcept) {
 					// Parsing/Creating table was unsuccessful
-					System.out.println(e.getMessage());
+					System.out.println(cTabExcept.getMessage());
+				} catch (AttributeException aExcept) {
+					// Parsing/Creating table was unsuccessful
+					System.out.println(aExcept.getMessage());
 				}
 			}
 			

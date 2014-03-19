@@ -3,6 +3,7 @@ package dbms.table;
 import java.util.ArrayList;
 
 import dbms.table.constraints.ForeignKeyConstraint;
+import dbms.table.constraints.NameValidation;
 import dbms.table.constraints.PrimaryKeyConstraint;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
@@ -46,6 +47,12 @@ public class Table {
 		}
 		if (tableName == null) {
 			throw new CreateTableException("Table cannot have null name.");
+		}
+		if (!NameValidation.isValidAlphaNumUnderscoreName(tableName)) {
+			throw new CreateTableException("Invalid table name '"+tableName+"'.");
+		}
+		if (!NameValidation.isValidNameLength(tableName)) {
+			throw new CreateTableException("Invalid table name length '"+tableName+"'.");
 		}
 		if (tableColumns == null || tableColumns.size() <= 0) {
 			throw new CreateTableException("At least one attribute must be specified to create a table.", this.tableName);

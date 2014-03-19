@@ -17,14 +17,14 @@ import dbms.table.exceptions.CreateTableException;
 
 public class ParseCreateTable {
 	private static String tableName = null;
-	
+
 	/* 
 	 * Creates a new table from parsing a CreateTableStatement.
 	 * 
 	 * If successful, adds the new table to the TABLE_MAP
 	 * If unsuccessful, throws an exception and table is not created.
 	 */
-	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt) throws CreateTableException {
+	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt) throws CreateTableException, AttributeException {
 		tableName = pStmt.getTargetTable().toString();
 		if (tableName == null) {
 			throw new CreateTableException("Table cannot have null name.");
@@ -60,16 +60,16 @@ public class ParseCreateTable {
 			}	
 
 			// Add the new column to the column list
-			try {
-				// Make sure attribute name is unique
-				for (TableColumn tbleColumn : tableColumnList) {
-					if (tableName.equals(tbleColumn.getTableName()) && tbleColumn.getColumnName().equals(columnName)) {
-						throw new CreateTableException("Table attribute names must be unique. Attribute '"+columnName+"' is already defined in this table.", tableName);
-					}
+			// Make sure attribute name is unique
+			for (TableColumn tbleColumn : tableColumnList) {
+				if (tableName.equals(tbleColumn.getTableName()) && tbleColumn.getColumnName().equals(columnName)) {
+					throw new CreateTableException("Table attribute names must be unique. Attribute '"+columnName+"' is already defined in this table.", tableName);
 				}
+			}
+			try {
 				tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, columnCheckConstraint));
 			} catch (AttributeException e) {
-				System.out.println(e.getMessage());
+				throw new CreateTableException("\n\t"+e.getMessage());
 			}
 		}		
 
@@ -131,10 +131,10 @@ public class ParseCreateTable {
 			if (!TableSearch.tableExists(constraint.getReferencedObject().toString())) {
 				throw new CreateTableException("Foreign key references table that does not exist.", tableName);
 			}
-			
+
 			// Create foreign key from referenced table name
 			ForeignKeyConstraint foreignKey = new ForeignKeyConstraint(TableSearch.getTable(constraint.getReferencedObject().toString()));
-			
+
 			// Add the table columns to the foreign key that will reference other attributes
 			if (constraint.getColumnList() != null) {
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
@@ -146,7 +146,7 @@ public class ParseCreateTable {
 					}					
 				}
 			}
-			
+
 			// Add the referenced columns to the foreign key
 			if (constraint.getReferencedColumnList() != null){
 				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
@@ -158,7 +158,7 @@ public class ParseCreateTable {
 					}					
 				}
 			}
-			
+
 			// Add the foreignKey to the foreignKeyList
 			foreignKeyList.add(foreignKey);
 			break;
