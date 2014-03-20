@@ -27,6 +27,7 @@ public class ParseTester {
 
 		//sqlparser.sqltext = "CREATE TABLE TEST_TABLE (deptid	int	PRIMARY KEY, deptname varchar(50) PRIMARY KEY);";
 		
+		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		int ret = sqlparser.parse();
 		if (ret == 0) {
 			// Parse was successful
@@ -66,12 +67,10 @@ public class ParseTester {
 				if (!table.getForeignKeyConstraintList().isEmpty()) {
 					for (ForeignKeyConstraint foreignKey : table.getForeignKeyConstraintList()) {
 						System.out.println("FOREIGN KEY:");
-						for (TableColumn column : foreignKey.getColumnList()) {
-							System.out.println("\tCOLUMN: "+column.getColumnName());
-						}
-						for (TableColumn column : foreignKey.getReferencedColumnList()) {
-							System.out.println("\tREFERENCED_COLUMN: "+column.getColumnName());
-						}
+						
+						System.out.println("\tCOLUMN: "+foreignKey.getColumn().getColumnName());
+						
+						System.out.println("\tREFERENCED_COLUMN: "+foreignKey.getReferencedColumn().getColumnName());
 					}
 				}
 				

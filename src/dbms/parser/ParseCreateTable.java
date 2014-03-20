@@ -2,6 +2,7 @@ package dbms.parser;
 
 import gudusoft.gsqlparser.nodes.TColumnDefinition;
 import gudusoft.gsqlparser.nodes.TConstraint;
+import gudusoft.gsqlparser.nodes.TObjectName;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 
 import java.util.ArrayList;
@@ -144,7 +145,10 @@ public class ParseCreateTable {
 					// Make sure the attribute the foreign key is specified on is in the table being created
 					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
-						foreignKey.addColumn(column);
+						if (foreignKey.getColumn() != null) {
+							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
+						}
+						foreignKey.setColumn(column);
 					} else {
 						throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
 					}					
@@ -157,7 +161,11 @@ public class ParseCreateTable {
 					// Make sure the attribute the foreign key references is in the table being created
 					TableColumn referencedColumn = TableSearch.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
 					if (referencedColumn != null) {
-						TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());	
+						TObjectName constraintObject = constraint.getColumnList().getObjectName(k);
+						if (constraintObject == null) {
+							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
+						}
+						TableColumn column = TableSearch.getTableColumnByName(columnList, constraintObject.toString());	
 						// Redundant sanity check, this is already handled above, but just wanted to make sure
 						if (column == null) {
 							throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
@@ -166,7 +174,10 @@ public class ParseCreateTable {
 						if (!(referencedColumn.getAttributeDataType() == column.getAttributeDataType())) {
 							throw new CreateTableException("Foreign key on attribute '"+column.getColumnName()+"' references attribute '"+referencedColumn.getColumnName()+"' which has a different datatype.", tableName);
 						}
-						foreignKey.addReferencedColumn(referencedColumn);
+						if (foreignKey.getReferencedColumn() != null) {
+							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
+						}
+						foreignKey.setReferencedColumn(referencedColumn);
 					} else {
 						throw new CreateTableException("Foreign key references an invalid attribute '"+constraint.getReferencedColumnList().getObjectName(k).toString()+"'.", tableName);
 					}					

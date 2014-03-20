@@ -1,39 +1,37 @@
 package dbms.table.constraints;
 
-import java.util.ArrayList;
-
 import dbms.table.Table;
 import dbms.table.TableColumn;
 
 
 public class ForeignKeyConstraint {
 	private Table referencedTable = null;
-	private ArrayList<TableColumn> referencedColumnList;
-	private ArrayList<TableColumn> columnList;
+	private TableColumn referencedColumn = null;
+	private TableColumn column = null;
 	
-	public ForeignKeyConstraint(Table referencedTable, ArrayList<TableColumn> columnList, ArrayList<TableColumn> referencedColumnList) {
+	public ForeignKeyConstraint(Table referencedTable, TableColumn column, TableColumn referencedColumn) {
 		this.referencedTable = referencedTable;
-		this.columnList = columnList;
-		this.referencedColumnList = referencedColumnList;
+		this.column = column;
+		this.referencedColumn = referencedColumn;
 	}
 	
 	public ForeignKeyConstraint(Table referencedTable) {
 		this.referencedTable = referencedTable;
-		this.columnList = new ArrayList<TableColumn>();
-		this.referencedColumnList = new ArrayList<TableColumn>();
+		this.column = null;
+		this.referencedColumn = null;
 	}
 	
-	public void addColumn(TableColumn column){
-		this.columnList.add(column);
+	public void setColumn(TableColumn column){
+		this.column = column;
 	}
 	
-	public void addReferencedColumn(TableColumn column){
-		this.referencedColumnList.add(column);
+	public void setReferencedColumn(TableColumn column){
+		this.referencedColumn = column;
 	}
 	
 	/* Getters and Setters */
 	public Table getReferencedTable() {return this.referencedTable;}
-	public ArrayList<TableColumn> getColumnList() {return this.columnList;}
-	public ArrayList<TableColumn> getReferencedColumnList() {return this.referencedColumnList;}
+	public TableColumn getColumn() {return this.column;}
+	public TableColumn getReferencedColumn() {return this.referencedColumn;}
 		
 }
