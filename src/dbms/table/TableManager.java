@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import dbms.table.exceptions.CreateTableException;
+import dbms.table.exceptions.DropTableException;
 
-public class TableSearch {
+public class TableManager {
 
 	// Key is Table Name, value is table
-	private static final HashMap<String, Table> TABLE_MAP = new HashMap<String, Table>();
+	private static final HashMap<String, Table> TABLE_MAP = new HashMap<String, Table>();	// Map of all existing tables
 
 
 	public static Table getTable(String tableName) {
@@ -24,6 +25,14 @@ public class TableSearch {
 			throw new CreateTableException("Table with that name already exists.", tableNameKey);
 		} else {
 			TABLE_MAP.put(tableNameKey, tableValue);
+		}
+	}
+	
+	public static void removeTable(String tableName) throws DropTableException {
+		if (!TABLE_MAP.containsKey(tableName)) {
+			throw new DropTableException("Table does not exist.", tableName);
+		} else {
+			TABLE_MAP.remove(tableName);
 		}
 	}
 

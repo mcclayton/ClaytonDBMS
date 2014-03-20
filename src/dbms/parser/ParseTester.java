@@ -1,22 +1,46 @@
 package dbms.parser;
 
 import gudusoft.gsqlparser.EDbVendor;
+import gudusoft.gsqlparser.TCustomSqlStatement;
 import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
+import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
 
 import java.util.ArrayList;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
+import dbms.table.TableManager;
 import dbms.table.TableRow;
-import dbms.table.TableSearch;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
+import dbms.table.exceptions.DropTableException;
 
 
 public class ParseTester {
+	
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException{
+
+		switch(stmt.sqlstatementtype){
+		case sstdroptable:
+			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt);
+			break;
+		case sstcreatetable:
+			// Try to parse and create a new table
+			// New table will be added to TABLE_MAP if successful
+			ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt);
+			break;
+		default:
+			System.out.println("<<< DEFAULT (UNHANDLED) >>>");
+			System.out.println(stmt.sqlstatementtype.toString());
+			System.out.println(stmt.toString());
+		}
+	}
+
+	
+	
 	public static void main(String args[])
 	{
 		// Use Oracle DB Syntax
@@ -34,21 +58,22 @@ public class ParseTester {
 			
 			for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
 				try {
-					// Try to parse and create a new table
-					// New table will be added to TABLE_MAP if successful
-					ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) sqlparser.sqlstatements.get(i));
+					parseAndPerformStmt(sqlparser.sqlstatements.get(i));
 				} catch (CreateTableException cTabExcept) {
 					// Parsing/Creating table was unsuccessful
 					System.out.println(cTabExcept.getMessage());
 				} catch (AttributeException aExcept) {
 					// Parsing/Creating table was unsuccessful
 					System.out.println(aExcept.getMessage());
+				} catch (DropTableException dTabExcept) {
+					// Parsing/Dropping table was unsuccessful
+					System.out.println(dTabExcept.getMessage());
 				}
 			}
 			
 			
 			// Print Each Table
-			for (Table table : TableSearch.getTableMap().values()) {
+			for (Table table : TableManager.getTableMap().values()) {
 				// Print table name
 				System.out.println("\nTABLE_NAME: "+table.getTableName());
 				

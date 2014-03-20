@@ -46,7 +46,7 @@ public class AnalyzeScript {
 		System.out.println("Selected SQL dialect: "+dbVendor.toString());
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/tables.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
 		int ret = sqlparser.parse();
 		if (ret == 0){

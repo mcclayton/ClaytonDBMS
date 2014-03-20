@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
-import dbms.table.TableSearch;
+import dbms.table.TableManager;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
 import dbms.table.exceptions.AttributeException;
@@ -91,7 +91,7 @@ public class ParseCreateTable {
 			throw new CreateTableException("No primary key specified for this table.", tableName);
 		}
 		table.setForeignKeyConstraintList(foreignKeyList);
-		TableSearch.addTable(table.getTableName(), table);
+		TableManager.addTable(table.getTableName(), table);
 		System.out.println("Table created successfully");
 		return table;
 	}
@@ -121,7 +121,7 @@ public class ParseCreateTable {
 					throw new CreateTableException("Only one primary key or composite primary key is allowed per table.", tableName);
 				}
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
-					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
+					TableColumn column = TableManager.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
 						primaryKey.addPrimaryColumn(column);
 					} else {
@@ -132,18 +132,18 @@ public class ParseCreateTable {
 			break;
 		case foreign_key:
 		case reference:
-			if (!TableSearch.tableExists(constraint.getReferencedObject().toString())) {
+			if (!TableManager.tableExists(constraint.getReferencedObject().toString())) {
 				throw new CreateTableException("Foreign key references table that does not exist.", tableName);
 			}
 
 			// Create foreign key from referenced table name
-			ForeignKeyConstraint foreignKey = new ForeignKeyConstraint(TableSearch.getTable(constraint.getReferencedObject().toString()));
+			ForeignKeyConstraint foreignKey = new ForeignKeyConstraint(TableManager.getTable(constraint.getReferencedObject().toString()));
 
 			// Add the table columns to the foreign key that will reference other attributes
 			if (constraint.getColumnList() != null) {
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
 					// Make sure the attribute the foreign key is specified on is in the table being created
-					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
+					TableColumn column = TableManager.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
 						if (foreignKey.getColumn() != null) {
 							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
@@ -159,13 +159,13 @@ public class ParseCreateTable {
 			if (constraint.getReferencedColumnList() != null){
 				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
 					// Make sure the attribute the foreign key references is in the table being created
-					TableColumn referencedColumn = TableSearch.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
+					TableColumn referencedColumn = TableManager.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
 					if (referencedColumn != null) {
 						TObjectName constraintObject = constraint.getColumnList().getObjectName(k);
 						if (constraintObject == null) {
 							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
 						}
-						TableColumn column = TableSearch.getTableColumnByName(columnList, constraintObject.toString());	
+						TableColumn column = TableManager.getTableColumnByName(columnList, constraintObject.toString());	
 						// Redundant sanity check, this is already handled above, but just wanted to make sure
 						if (column == null) {
 							throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
