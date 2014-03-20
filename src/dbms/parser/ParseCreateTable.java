@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
+import dbms.table.TableColumn.DataType;
 import dbms.table.TableSearch;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
@@ -34,7 +35,7 @@ public class ParseCreateTable {
 		ArrayList<TableColumn> tableColumnList = new ArrayList<TableColumn>();
 		TColumnDefinition column;
 		String columnName;
-		String columnDataType;
+		String columnDataTypeString;
 		String columnCheckConstraint = null;
 		PrimaryKeyConstraint primaryKey = new PrimaryKeyConstraint();
 		ArrayList<ForeignKeyConstraint> foreignKeyList = new ArrayList<ForeignKeyConstraint>();
@@ -46,8 +47,7 @@ public class ParseCreateTable {
 
 			// Get the column data type
 			if (column.getDatatype() != null) {
-				// TODO: Do further validation of datatype 
-				columnDataType = column.getDatatype().toString();
+				columnDataTypeString = column.getDatatype().toString();
 			} else {
 				throw new CreateTableException("Column '"+columnName+"' cannot have null datatype.", tableName);
 			}
@@ -67,7 +67,7 @@ public class ParseCreateTable {
 				}
 			}
 			try {
-				tableColumnList.add(new TableColumn(tableName, columnName, columnDataType, columnCheckConstraint));
+				tableColumnList.add(new TableColumn(tableName, columnName, columnDataTypeString, columnCheckConstraint));
 			} catch (AttributeException e) {
 				if (tableName != null) {
 					throw new CreateTableException("\n\t|\n\t\\-->\t"+e.getMessage(), tableName);
@@ -142,6 +142,7 @@ public class ParseCreateTable {
 			// Add the table columns to the foreign key that will reference other attributes
 			if (constraint.getColumnList() != null) {
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
+					// Make sure the attribute the foreign key is specified on is in the table being created
 					TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
 						foreignKey.addColumn(column);
@@ -154,10 +155,19 @@ public class ParseCreateTable {
 			// Add the referenced columns to the foreign key
 			if (constraint.getReferencedColumnList() != null){
 				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
-					TableColumn column = TableSearch.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
-					if (column != null) {
-						// TODO: Make sure column and referenced column both have the same type
-						foreignKey.addReferencedColumn(column);
+					// Make sure the attribute the foreign key references is in the table being created
+					TableColumn referencedColumn = TableSearch.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
+					if (referencedColumn != null) {
+						TableColumn column = TableSearch.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());	
+						// Redundant sanity check, this is already handled above, but just wanted to make sure
+						if (column == null) {
+							throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
+						}
+						// Make sure column and referenced column both have the same type
+						if (!(referencedColumn.getAttributeDataType() == column.getAttributeDataType())) {
+							throw new CreateTableException("Foreign key on attribute '"+column.getColumnName()+"' references attribute '"+referencedColumn.getColumnName()+"' which has a different datatype.", tableName);
+						}
+						foreignKey.addReferencedColumn(referencedColumn);
 					} else {
 						throw new CreateTableException("Foreign key references an invalid attribute '"+constraint.getReferencedColumnList().getObjectName(k).toString()+"'.", tableName);
 					}					

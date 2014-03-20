@@ -14,18 +14,16 @@ public class TableColumn {
 	}
 	private String relationName;
 	private String attributeName;
-	private String attributeTypeString;
 	private String checkConstraint;	// TODO: Need to make this a valid constraint expression and validate the expression
 
 	/* Column Constraints */
-	String checkExpression = null;	// Domain constraint for attribute
+	String checkExpression = null;			// Domain constraint for attribute
 	DataType attributeDataType = null;		// The type of attribute
-	int	varCharLength = 0;			// Length constraint if type is of varchar()
+	int	varCharLength = 0;					// Length constraint if type is of varchar()
 
 	public TableColumn(String relationName, String attributeName, String attributeTypeString, String checkConstraint) throws CreateTableException, AttributeException {
 		this.relationName = relationName;
 		this.attributeName = attributeName;
-		this.attributeTypeString = attributeTypeString;
 		this.checkConstraint = checkConstraint;
 
 		if (!NameValidation.isValidAlphaNumUnderscoreName(attributeName)) {
@@ -38,7 +36,7 @@ public class TableColumn {
 			throw new CreateTableException("No relation name specified.");
 		}
 
-		// TODO: Handle the attribute type
+		// Get the attribute datatype
 		switch (getAttributeType(attributeTypeString)) {
 		case INT:
 			attributeDataType = DataType.INT;
@@ -59,9 +57,9 @@ public class TableColumn {
 	/*
 	 * Use regex to find out what data type an attribute is.
 	 */
-	private DataType getAttributeType(String attributeString) {
+	private DataType getAttributeType(String attributeTypeString) {
 		// TODO: Perhaps I need to remove spaces
-		String nameLower = attributeString.toLowerCase();
+		String nameLower = attributeTypeString.toLowerCase();
 		if (nameLower.matches("([ \t]*)int([ \t]*)")) {
 			return DataType.INT;
 		} else if (nameLower.matches("([ \t]*)decimal([ \t]*)")) {
