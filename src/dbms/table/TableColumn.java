@@ -10,7 +10,7 @@ import dbms.table.exceptions.CreateTableException;
 public class TableColumn {
 
 	public enum DataType {
-	    INT, DECIMAL, VARCHAR, UNKNOWN
+	    INT, DECIMAL, CHAR, UNKNOWN
 	}
 	private String relationName;
 	private String attributeName;
@@ -44,8 +44,8 @@ public class TableColumn {
 		case DECIMAL:
 			attributeDataType = DataType.DECIMAL;
 			break;
-		case VARCHAR:
-			attributeDataType = DataType.VARCHAR;
+		case CHAR:
+			attributeDataType = DataType.CHAR;
 			Scanner scanner = new Scanner(attributeTypeString).useDelimiter("[^0-9]+");
 	        varCharLength = scanner.nextInt();
 			break;
@@ -58,14 +58,13 @@ public class TableColumn {
 	 * Use regex to find out what data type an attribute is.
 	 */
 	private DataType getAttributeType(String attributeTypeString) {
-		// TODO: Perhaps I need to remove spaces
 		String nameLower = attributeTypeString.toLowerCase();
 		if (nameLower.matches("([ \t]*)int([ \t]*)")) {
 			return DataType.INT;
 		} else if (nameLower.matches("([ \t]*)decimal([ \t]*)")) {
 			return DataType.DECIMAL;
-		} else if (nameLower.matches("([ \t]*)varchar\\(([ \t]*)([0-9]{1,5})([ \t]*)\\)([ \t]*)")) { // TODO: Check with regex
-			return DataType.VARCHAR;
+		} else if (nameLower.matches("([ \t]*)char\\(([ \t]*)([0-9]{1,5})([ \t]*)\\)([ \t]*)")) {
+			return DataType.CHAR;
 		} else {
 			return DataType.UNKNOWN;
 		}

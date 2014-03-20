@@ -80,7 +80,7 @@ public class ParseTester {
 					System.out.print("COLUMN: "+column.getColumnName());
 					
 					if (column.getAttributeDataType() != null) {
-						if (column.getAttributeDataType() == DataType.VARCHAR) {
+						if (column.getAttributeDataType() == DataType.CHAR) {
 							System.out.print("\t\tDATATYPE: "+column.getAttributeDataType().toString()+" "+column.getVarCharLength());
 						} else {
 							System.out.print("\t\tDATATYPE: "+column.getAttributeDataType().toString());

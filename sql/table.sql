@@ -12,20 +12,21 @@ PRIMARY KEY(fid)
 
 CREATE TABLE TABLE_TEST (
     fidentification     int     CHECK (fidentification > 100),
+    fname2  char(40),
     PRIMARY KEY(fidentification)
 );
 
 CREATE TABLE TABLE_TEST2 (
-    fid int,
+    fid Char(256),
     PRIMARY KEY(fid)
 );
 
 CREATE TABLE TABLE_WITH_NO_ERRORS (
 fid     int                 CHECK (fid > 100),
-fname   varchar(50)         CHECK (fname='Michael' AND fname like 'wow'),
+fname   char(50)         CHECK (fname='Michael' AND fname like 'wow'),
 deptid  int                 CHECK (deptid <= 50),
-FOREIGN KEY(deptid) REFERENCES TABLE_TEST(fidentification),
-PRIMARY KEY(fid, deptid)
+FOREIGN KEY(deptid, fname) REFERENCES TABLE_TEST(fidentification, fname2),
+PRIMARY KEY(fid)
 );
 
 

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
-import dbms.table.TableColumn.DataType;
 import dbms.table.TableSearch;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
