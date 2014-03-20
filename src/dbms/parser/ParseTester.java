@@ -8,6 +8,7 @@ import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
 
 import java.util.ArrayList;
 
+import dbms.help.HelpCommands;
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
@@ -21,26 +22,6 @@ import dbms.table.exceptions.DropTableException;
 
 public class ParseTester {
 	
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException{
-
-		switch(stmt.sqlstatementtype){
-		case sstdroptable:
-			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt);
-			break;
-		case sstcreatetable:
-			// Try to parse and create a new table
-			// New table will be added to TABLE_MAP if successful
-			ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt);
-			break;
-		default:
-			System.out.println("<<< DEFAULT (UNHANDLED) >>>");
-			System.out.println(stmt.sqlstatementtype.toString());
-			System.out.println(stmt.toString());
-		}
-	}
-
-	
-	
 	public static void main(String args[])
 	{
 		// Use Oracle DB Syntax
@@ -49,7 +30,7 @@ public class ParseTester {
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		//sqlparser.sqltext = "CREATE TABLE TEST_TABLE (deptid	int	PRIMARY KEY, deptname varchar(50) PRIMARY KEY);";
+		//sqlparser.sqltext = "\t     HelP tAbles ; ";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		int ret = sqlparser.parse();
@@ -149,6 +130,36 @@ public class ParseTester {
 			//}
 		} else{
 			System.out.println("Parse Error: "+sqlparser.getErrormessage());
+		}
+	}
+	
+	
+	
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException{
+
+		switch(stmt.sqlstatementtype) {
+		case sstdroptable:
+			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt);
+			break;
+		case sstcreatetable:
+			// Try to parse and create a new table
+			// New table will be added to TABLE_MAP if successful
+			ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt);
+			break;
+		case sstsqlpluscmd:
+			String statementString = stmt.toString();
+			boolean ret;
+			ret = HelpCommands.parseAndPrintHelpCommand(statementString);
+			if (ret == false) {
+				// No Help command was matched
+				// TODO: Throw an exception
+				System.out.println("Parse Error: Invalid command.");
+			}
+			break;
+		default:
+			System.out.println("<<< DEFAULT (UNHANDLED) >>>");
+			System.out.println(stmt.sqlstatementtype.toString());
+			System.out.println(stmt.toString());
 		}
 	}
 

@@ -1,4 +1,5 @@
 /* Michael Clayton 2014 */
+help tables ;
 
 CREATE TABLE FACULTY (
 fid     int                 NOT NULL,
@@ -31,3 +32,5 @@ PRIMARY KEY(fid)
 );
 
 DROP TABLE TABLE_WITH_NO_ERRORS;
+
+HELP tables;
