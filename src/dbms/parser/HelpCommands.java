@@ -1,4 +1,4 @@
-package dbms.help;
+package dbms.parser;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;

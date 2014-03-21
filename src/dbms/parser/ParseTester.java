@@ -5,7 +5,6 @@ import gudusoft.gsqlparser.TCustomSqlStatement;
 import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
-import dbms.help.HelpCommands;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 import dbms.table.exceptions.DropTableException;
@@ -22,7 +21,7 @@ public class ParseTester {
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		sqlparser.sqltext = " help create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;";
+		sqlparser.sqltext = " help create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		int ret = sqlparser.parse();
@@ -72,8 +71,12 @@ public class ParseTester {
 			try {
 				ret = HelpCommands.parseAndPrintHelpCommand(statementString);
 				if (ret == false) {
-					// No Help command was matched
-					System.out.println("Parse Error: Invalid command.");
+					// Help command was not found, so try to see if it is a quit command
+					ret = QuitCommand.parseAndPerformQuitCommand(statementString);
+					if (ret == false) {
+						// No Help/Quit command was matched
+						System.out.println("Parse Error: Invalid command.");	
+					}
 				}
 			} catch (HelpException e) {
 				System.out.println(e.getMessage());
