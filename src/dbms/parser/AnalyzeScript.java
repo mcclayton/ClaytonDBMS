@@ -47,7 +47,7 @@ public class AnalyzeScript {
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
-
+		
 		int ret = sqlparser.parse();
 		if (ret == 0){
 			for(int i=0;i<sqlparser.sqlstatements.size();i++){

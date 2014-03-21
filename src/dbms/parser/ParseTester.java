@@ -29,9 +29,9 @@ public class ParseTester {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		sqlparser.sqltext = " help DROP table ;";
+		//sqlparser.sqltext = " help describe TEST_TABLE_2 ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		int ret = sqlparser.parse();
