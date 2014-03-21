@@ -18,6 +18,7 @@ import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 import dbms.table.exceptions.DropTableException;
+import dbms.table.exceptions.HelpException;
 
 
 public class ParseTester {
@@ -28,9 +29,9 @@ public class ParseTester {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		//sqlparser.sqltext = "\t     HelP tAbles ; ";
+		sqlparser.sqltext = " help DROP table ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		int ret = sqlparser.parse();
@@ -149,11 +150,14 @@ public class ParseTester {
 		case sstsqlpluscmd:
 			String statementString = stmt.toString();
 			boolean ret;
-			ret = HelpCommands.parseAndPrintHelpCommand(statementString);
-			if (ret == false) {
-				// No Help command was matched
-				// TODO: Throw an exception
-				System.out.println("Parse Error: Invalid command.");
+			try {
+				ret = HelpCommands.parseAndPrintHelpCommand(statementString);
+				if (ret == false) {
+					// No Help command was matched
+					System.out.println("Parse Error: Invalid command.");
+				}
+			} catch (HelpException e) {
+				System.out.println(e.getMessage());
 			}
 			break;
 		default:
