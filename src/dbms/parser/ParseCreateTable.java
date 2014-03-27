@@ -170,6 +170,14 @@ public class ParseCreateTable {
 						if (column == null) {
 							throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
 						}
+						// Make sure the referenced column is the primary key of the referenced table (must be ONLY primary key of the table i.e. not part of composite key)
+						Table referencedTable = TableManager.getTable(constraint.getReferencedObject().toString());
+						if (!referencedTable.getPrimaryKeyConstraint().getPrimaryColumnList().contains(referencedColumn)) {
+							throw new CreateTableException("Foreign key on attribute '"+column.getColumnName()+"' references attribute '"+referencedColumn.getColumnName()+"' which is not a primary key.", tableName);
+						} else if (referencedTable.getPrimaryKeyConstraint().getPrimaryColumnList().size() > 1) {
+							throw new CreateTableException("Foreign key on attribute '"+column.getColumnName()+"' references attribute '"+referencedColumn.getColumnName()+"' which is part of a composite primary key.", tableName);
+						}
+						
 						// Make sure column and referenced column both have the same type
 						if (!(referencedColumn.getAttributeDataType() == column.getAttributeDataType())) {
 							throw new CreateTableException("Foreign key on attribute '"+column.getColumnName()+"' references attribute '"+referencedColumn.getColumnName()+"' which has a different datatype.", tableName);
