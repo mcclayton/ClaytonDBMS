@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
+import dbms.table.constraints.CheckConstraint;
+import dbms.table.constraints.CheckConstraintList;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
 import dbms.table.exceptions.AttributeException;
@@ -55,7 +57,7 @@ public class ParseCreateTable {
 			// Get in-line column 'check' constraints
 			if (column.getConstraints() != null) {
 				for(int j=0;j<column.getConstraints().size();j++){
-					columnCheckConstraint = getCheckConstraint(column.getConstraints().getConstraint(j));
+					columnCheckConstraint = getCheckConstraint(column.getConstraints().getConstraint(j), tableName, columnName);
 				}
 			}	
 
@@ -97,9 +99,15 @@ public class ParseCreateTable {
 	}
 
 
-	protected static String getCheckConstraint(TConstraint constraint) throws CreateTableException {
+	protected static String getCheckConstraint(TConstraint constraint, String tableName, String columnName) throws CreateTableException {
 		switch(constraint.getConstraint_type()){
 		case check:
+			// TODO: Return constraint object
+			CheckConstraintList checkConstraintList = ParseCheckConstraint.parseList(constraint, tableName, columnName);
+			for (CheckConstraint checkConstraint : checkConstraintList.getCheckConstraintList()) {
+				System.out.print(checkConstraint.getParentColumn()+" "+checkConstraint.getOperatorString()+" "+checkConstraint.getConstantString()+" "+checkConstraintList.getLogicalOperator());
+			}
+			System.out.println();
 			return constraint.getCheckCondition().toString();
 		case primary_key:
 			throw new CreateTableException("Primary key must be specified after all attributes are listed.", tableName);

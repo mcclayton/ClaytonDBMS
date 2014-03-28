@@ -5,6 +5,7 @@ import gudusoft.gsqlparser.ESqlStatementType;
 import gudusoft.gsqlparser.TBaseType;
 import gudusoft.gsqlparser.TCustomSqlStatement;
 import gudusoft.gsqlparser.TGSqlParser;
+import gudusoft.gsqlparser.TSourceTokenList;
 import gudusoft.gsqlparser.nodes.TAlterTableOption;
 import gudusoft.gsqlparser.nodes.TColumnDefinition;
 import gudusoft.gsqlparser.nodes.TColumnDefinitionList;
@@ -176,6 +177,11 @@ public class AnalyzeScript {
 			}
 			break;
 		case check:
+			TSourceTokenList list = new TSourceTokenList();
+			constraint.getCheckCondition().addAllMyTokensToTokenList(list, 0);
+			for (int i=0; i < list.size(); i++) {
+				System.out.println("*** "+i+".) "+list.get(i).toString());
+			}
 			System.out.println("\t\tcheck:"+constraint.getCheckCondition().toString());
 			break;
 		case foreign_key:
