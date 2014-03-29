@@ -11,15 +11,18 @@ public class CheckConstraintList {
 	
 	ArrayList<CheckConstraint> checkConstraintList = null;
 	LOGICAL_OPERATOR logicalOperator = LOGICAL_OPERATOR.NONE;
+	String fullCheckConstraintString = null;
 	
-	public CheckConstraintList(ArrayList<CheckConstraint> checkConstraintList, LOGICAL_OPERATOR logicalOperator) {
+	public CheckConstraintList(ArrayList<CheckConstraint> checkConstraintList, LOGICAL_OPERATOR logicalOperator, String fullCheckConstraintString) {
 		this.checkConstraintList = checkConstraintList;
 		this.logicalOperator = logicalOperator;
+		this.fullCheckConstraintString = fullCheckConstraintString;
 	}
 	
-	public CheckConstraintList() {
+	public CheckConstraintList(String fullCheckConstraintString) {
 		this.checkConstraintList = new ArrayList<CheckConstraint>();
 		logicalOperator = null;
+		this.fullCheckConstraintString = fullCheckConstraintString;
 	}
 	
 	public void addConstraint(CheckConstraint checkConstraint) {
@@ -28,7 +31,8 @@ public class CheckConstraintList {
 	
 	/* Getters and Setters */
 	public ArrayList<CheckConstraint> getCheckConstraintList() {return this.checkConstraintList;}
-	public LOGICAL_OPERATOR getLogicalOperator() {return this.logicalOperator;}	
+	public LOGICAL_OPERATOR getLogicalOperator() {return this.logicalOperator;}
+	public String getFullCheckConstraintString() {return fullCheckConstraintString;}
 	
 	public void setLogicalOperator(LOGICAL_OPERATOR logicalOperator) {this.logicalOperator = logicalOperator;}
 }

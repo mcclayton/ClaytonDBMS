@@ -12,7 +12,7 @@ PRIMARY KEY(fid)
 
 
 CREATE TABLE TABLE_TEST (
-    fidentification     int     CHECK (fidentification > 100),
+    fidentification     int     CHECK (fidentification > 100 OR fidentification < 20),
     fname2  char(40),
     PRIMARY KEY(fidentification)
 );
@@ -33,6 +33,8 @@ PRIMARY KEY(fid)
 
 
 HELP tables;
+
+help describe TABLE_TEST;
 
  help DESCRIBE TABLE_WITH_NO_ERRORS;
 

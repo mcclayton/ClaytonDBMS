@@ -125,8 +125,10 @@ public class HelpCommands {
 			}
 
 			// Print domain constraints
-			if (column.getCheckConstraint() != null) {
-				System.out.println(" -- "+column.getCheckConstraint());
+			if (column.getCheckConstraintList() != null) {
+				if (column.getCheckConstraintList().getFullCheckConstraintString() != null) {
+					System.out.println(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
+				}
 			} 
 		}
 

@@ -42,10 +42,11 @@ public class ParseCreateTable {
 		String columnName;
 		DataType columnDataType;
 		String attributeTypeString = null;
-		String columnCheckConstraint = null;
+		CheckConstraintList columnCheckConstraintList = null;
 		PrimaryKeyConstraint primaryKey = new PrimaryKeyConstraint();
 		ArrayList<ForeignKeyConstraint> foreignKeyList = new ArrayList<ForeignKeyConstraint>();
-		for(int i=0; i<pStmt.getColumnList().size(); i++){
+		for(int i=0; i<pStmt.getColumnList().size(); i++) {
+			columnCheckConstraintList = null;
 			column = pStmt.getColumnList().getColumn(i);
 
 			// Get column name
@@ -65,7 +66,8 @@ public class ParseCreateTable {
 			// Get in-line column 'check' constraints
 			if (column.getConstraints() != null) {
 				for(int j=0; j<column.getConstraints().size(); j++) {
-					columnCheckConstraint = getCheckConstraint(column.getConstraints().getConstraint(j), tableName, columnName, columnDataType);
+					System.out.println(">>>>>>>>"+j+":"+column.getConstraints().getConstraint(j));
+					columnCheckConstraintList = getCheckConstraintList(column.getConstraints().getConstraint(j), tableName, columnName, columnDataType);
 				}
 			}	
 
@@ -77,7 +79,7 @@ public class ParseCreateTable {
 				}
 			}
 			try {
-				tableColumnList.add(new TableColumn(tableName, columnName, attributeTypeString, columnCheckConstraint));
+				tableColumnList.add(new TableColumn(tableName, columnName, attributeTypeString, columnCheckConstraintList));
 			} catch (AttributeException e) {
 				if (tableName != null) {
 					throw new CreateTableException("\n\t|\n\t\\-->\t"+e.getMessage(), tableName);
@@ -107,7 +109,7 @@ public class ParseCreateTable {
 	}
 
 
-	protected static String getCheckConstraint(TConstraint constraint, String tableName, String columnName, DataType columnDataType) throws CreateTableException {
+	protected static CheckConstraintList getCheckConstraintList(TConstraint constraint, String tableName, String columnName, DataType columnDataType) throws CreateTableException {
 		switch(constraint.getConstraint_type()) {
 		case check:
 			// TODO: Return constraint object
@@ -125,7 +127,7 @@ public class ParseCreateTable {
 			}
 			System.out.println();
 			*/
-			return constraint.getCheckCondition().toString();
+			return checkConstraintList;
 		case primary_key:
 			throw new CreateTableException("Primary key must be specified after all attributes are listed.", tableName);
 		case foreign_key:

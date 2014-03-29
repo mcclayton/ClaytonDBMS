@@ -2,6 +2,7 @@ package dbms.table;
 
 import java.util.Scanner;
 
+import dbms.table.constraints.CheckConstraintList;
 import dbms.table.constraints.NameValidation;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
@@ -14,17 +15,16 @@ public class TableColumn {
 	}
 	private String relationName;
 	private String attributeName;
-	private String checkConstraint;	// TODO: Need to make this a valid constraint expression and validate the expression
+	private CheckConstraintList checkConstraintList;	// TODO: Need to make this a valid constraint expression and validate the expression
 
 	/* Column Constraints */
-	String checkExpression = null;			// Domain constraint for attribute
 	DataType attributeDataType = null;		// The type of attribute
 	int	varCharLength = 0;					// Length constraint if type is of varchar()
 
-	public TableColumn(String relationName, String attributeName, String attributeTypeString, String checkConstraint) throws CreateTableException, AttributeException {
+	public TableColumn(String relationName, String attributeName, String attributeTypeString, CheckConstraintList checkConstraintList) throws CreateTableException, AttributeException {
 		this.relationName = relationName;
 		this.attributeName = attributeName;
-		this.checkConstraint = checkConstraint;
+		this.checkConstraintList = checkConstraintList;
 
 		if (!NameValidation.isValidAlphaNumUnderscoreName(attributeName)) {
 			throw new AttributeException("Invalid attribute name '"+attributeName+"'.");
@@ -75,6 +75,6 @@ public class TableColumn {
 	public String getTableName() {return this.relationName;}
 	public String getColumnName() {return this.attributeName;}
 	public DataType getAttributeDataType() {return this.attributeDataType;}
-	public String getCheckConstraint() {return this.checkConstraint;}
+	public CheckConstraintList getCheckConstraintList() {return this.checkConstraintList;}
 	public int getVarCharLength() {return this.varCharLength;}
 }

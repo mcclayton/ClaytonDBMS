@@ -30,10 +30,8 @@ public class CheckConstraint {
 	public String getOperatorString() {return this.operator;}
 	public String getConstantString() {return this.constant;}	
 
-	/* Domain Verification Methods */
-	// TODO: Implement these methods
 
-	/*
+	/* Domain Verification
 	 * Checks @attributeValue and makes sure it satisfies all of the conditions in @constraint
 	 */
 	public static boolean passesCheckConstraints(String attributeValue, DataType attributeDataType, CheckConstraintList constraintList) throws ScriptException {

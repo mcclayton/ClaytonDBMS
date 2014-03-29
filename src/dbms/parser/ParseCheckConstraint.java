@@ -14,7 +14,7 @@ public class ParseCheckConstraint {
 	public static CheckConstraintList parseList(TConstraint constraint, String parentTableName, String parentColumnName, DataType columnDataType) throws CreateTableException {
 			TSourceTokenList tokenList = new TSourceTokenList();
 			constraint.getCheckCondition().addAllMyTokensToTokenList(tokenList, 0); // Put all tokens into list
-			CheckConstraintList checkConstraintList = new CheckConstraintList();
+			CheckConstraintList checkConstraintList = new CheckConstraintList(constraint.getCheckCondition().toString());
 			String attribute = null;
 			String operator = null;
 			String constant = null;
