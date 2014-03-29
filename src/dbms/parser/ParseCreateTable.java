@@ -7,13 +7,10 @@ import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 
 import java.util.ArrayList;
 
-import javax.script.ScriptException;
-
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.TableManager;
-import dbms.table.constraints.CheckConstraint;
 import dbms.table.constraints.CheckConstraintList;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.constraints.PrimaryKeyConstraint;
@@ -66,7 +63,6 @@ public class ParseCreateTable {
 			// Get in-line column 'check' constraints
 			if (column.getConstraints() != null) {
 				for(int j=0; j<column.getConstraints().size(); j++) {
-					System.out.println(">>>>>>>>"+j+":"+column.getConstraints().getConstraint(j));
 					columnCheckConstraintList = getCheckConstraintList(column.getConstraints().getConstraint(j), tableName, columnName, columnDataType);
 				}
 			}	
@@ -112,7 +108,6 @@ public class ParseCreateTable {
 	protected static CheckConstraintList getCheckConstraintList(TConstraint constraint, String tableName, String columnName, DataType columnDataType) throws CreateTableException {
 		switch(constraint.getConstraint_type()) {
 		case check:
-			// TODO: Return constraint object
 			CheckConstraintList checkConstraintList = ParseCheckConstraint.parseList(constraint, tableName, columnName, columnDataType);
 			// TODO: Remove this later -- just here for testing
 			/*

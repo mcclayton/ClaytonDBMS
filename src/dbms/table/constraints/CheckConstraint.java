@@ -4,7 +4,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.constraints.CheckConstraintList.LOGICAL_OPERATOR;
 

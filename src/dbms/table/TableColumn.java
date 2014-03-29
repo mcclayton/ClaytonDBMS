@@ -15,7 +15,7 @@ public class TableColumn {
 	}
 	private String relationName;
 	private String attributeName;
-	private CheckConstraintList checkConstraintList;	// TODO: Need to make this a valid constraint expression and validate the expression
+	private CheckConstraintList checkConstraintList;
 
 	/* Column Constraints */
 	DataType attributeDataType = null;		// The type of attribute

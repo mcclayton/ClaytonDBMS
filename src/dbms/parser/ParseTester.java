@@ -5,10 +5,12 @@ import gudusoft.gsqlparser.TCustomSqlStatement;
 import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
+import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 import dbms.table.exceptions.DropTableException;
 import dbms.table.exceptions.HelpException;
+import dbms.table.exceptions.InsertException;
 
 
 public class ParseTester {
@@ -21,6 +23,7 @@ public class ParseTester {
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
+		sqlparser.sqltext = "INSERT INTO table_name (column1,column2,column3) VALUES (value1,value2,value3);";
 		//sqlparser.sqltext = "HELP TABLES; \nhelp create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
@@ -40,6 +43,9 @@ public class ParseTester {
 				} catch (DropTableException dTabExcept) {
 					// Parsing/Dropping table was unsuccessful
 					System.out.println(dTabExcept.getMessage());
+				} catch (InsertException insertExcept) {
+					// Inserting values into table was unsuccessful
+					System.out.println(insertExcept.getMessage());
 				}
 			}
 			
@@ -54,9 +60,12 @@ public class ParseTester {
 	
 	
 	
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException{
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException{
 
 		switch(stmt.sqlstatementtype) {
+		case sstinsert:
+			ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt);
+			break;
 		case sstdroptable:
 			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt);
 			break;
