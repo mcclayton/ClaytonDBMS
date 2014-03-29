@@ -57,7 +57,7 @@ public class TableColumn {
 	/*
 	 * Use regex to find out what data type an attribute is.
 	 */
-	private DataType getAttributeType(String attributeTypeString) {
+	public static DataType getAttributeType(String attributeTypeString) {
 		String nameLower = attributeTypeString.toLowerCase();
 		if (nameLower.matches("([ \t]*)int([ \t]*)")) {
 			return DataType.INT;

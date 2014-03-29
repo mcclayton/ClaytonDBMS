@@ -7,8 +7,11 @@ import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 
 import java.util.ArrayList;
 
+import javax.script.ScriptException;
+
 import dbms.table.Table;
 import dbms.table.TableColumn;
+import dbms.table.TableColumn.DataType;
 import dbms.table.TableManager;
 import dbms.table.constraints.CheckConstraint;
 import dbms.table.constraints.CheckConstraintList;
@@ -37,7 +40,8 @@ public class ParseCreateTable {
 		ArrayList<TableColumn> tableColumnList = new ArrayList<TableColumn>();
 		TColumnDefinition column;
 		String columnName;
-		String columnDataTypeString;
+		DataType columnDataType;
+		String attributeTypeString = null;
 		String columnCheckConstraint = null;
 		PrimaryKeyConstraint primaryKey = new PrimaryKeyConstraint();
 		ArrayList<ForeignKeyConstraint> foreignKeyList = new ArrayList<ForeignKeyConstraint>();
@@ -49,15 +53,19 @@ public class ParseCreateTable {
 
 			// Get the column data type
 			if (column.getDatatype() != null) {
-				columnDataTypeString = column.getDatatype().toString();
+				attributeTypeString = column.getDatatype().toString();
+				columnDataType = TableColumn.getAttributeType(attributeTypeString);
+				if (columnDataType == DataType.UNKNOWN) {
+					throw new AttributeException("Invalid attribute datatype '"+attributeTypeString+"'.");
+				}
 			} else {
 				throw new CreateTableException("Column '"+columnName+"' cannot have null datatype.", tableName);
 			}
 
 			// Get in-line column 'check' constraints
 			if (column.getConstraints() != null) {
-				for(int j=0;j<column.getConstraints().size();j++){
-					columnCheckConstraint = getCheckConstraint(column.getConstraints().getConstraint(j), tableName, columnName);
+				for(int j=0; j<column.getConstraints().size(); j++) {
+					columnCheckConstraint = getCheckConstraint(column.getConstraints().getConstraint(j), tableName, columnName, columnDataType);
 				}
 			}	
 
@@ -69,7 +77,7 @@ public class ParseCreateTable {
 				}
 			}
 			try {
-				tableColumnList.add(new TableColumn(tableName, columnName, columnDataTypeString, columnCheckConstraint));
+				tableColumnList.add(new TableColumn(tableName, columnName, attributeTypeString, columnCheckConstraint));
 			} catch (AttributeException e) {
 				if (tableName != null) {
 					throw new CreateTableException("\n\t|\n\t\\-->\t"+e.getMessage(), tableName);
@@ -99,15 +107,24 @@ public class ParseCreateTable {
 	}
 
 
-	protected static String getCheckConstraint(TConstraint constraint, String tableName, String columnName) throws CreateTableException {
-		switch(constraint.getConstraint_type()){
+	protected static String getCheckConstraint(TConstraint constraint, String tableName, String columnName, DataType columnDataType) throws CreateTableException {
+		switch(constraint.getConstraint_type()) {
 		case check:
 			// TODO: Return constraint object
-			CheckConstraintList checkConstraintList = ParseCheckConstraint.parseList(constraint, tableName, columnName);
+			CheckConstraintList checkConstraintList = ParseCheckConstraint.parseList(constraint, tableName, columnName, columnDataType);
+			// TODO: Remove this later -- just here for testing
+			/*
+			System.out.print("FULL EXPRESSION:");
 			for (CheckConstraint checkConstraint : checkConstraintList.getCheckConstraintList()) {
-				System.out.print(checkConstraint.getParentColumn()+" "+checkConstraint.getOperatorString()+" "+checkConstraint.getConstantString()+" "+checkConstraintList.getLogicalOperator());
+				System.out.print(" "+checkConstraint.getParentColumnName()+" "+checkConstraint.getOperatorString()+" "+checkConstraint.getConstantString()+" "+checkConstraintList.getLogicalOperator());
+			}
+			try {
+				System.out.println(" >>> "+columnDataType.toString()+" --  "+CheckConstraint.passesCheckConstraints("Michael", columnDataType, checkConstraintList));
+			} catch (ScriptException e) {
+				System.out.println(e);
 			}
 			System.out.println();
+			*/
 			return constraint.getCheckCondition().toString();
 		case primary_key:
 			throw new CreateTableException("Primary key must be specified after all attributes are listed.", tableName);
