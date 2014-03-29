@@ -25,31 +25,40 @@ public class ParseCheckConstraint {
 				String token = tokenList.get(i).toString();
 				
 				if (token.matches("(?i)([ \t\r\n\f]*)and([ \t\r\n\f]*)")) {
-					//System.out.println("LOGICAL_OPERATOR: '"+token+"'");
+					// Logical And
+					if (checkConstraintList.getLogicalOperator() == LOGICAL_OPERATOR.OR) {
+						throw new CreateTableException("Only one type of logical operator allowed per domain constraint.", parentTableName);
+					}
 					checkConstraintList.setLogicalOperator(LOGICAL_OPERATOR.AND);
 				} else if (token.matches("(?i)([ \t\r\n\f]*)or([ \t\r\n\f]*)")) {
-					//System.out.println("LOGICAL_OPERATOR: '"+token+"'");
+					// Logical Or
+					if (checkConstraintList.getLogicalOperator() == LOGICAL_OPERATOR.AND) {
+						throw new CreateTableException("Only one type of logical operator allowed per domain constraint.", parentTableName);
+					}
 					checkConstraintList.setLogicalOperator(LOGICAL_OPERATOR.OR);
 				} else if (token.matches("[0-9]+")) {
-					//System.out.println("CONSTANT_INT: '"+token+"'");
+					// Constant Int
 					constantType = DataType.INT;
 					constant = token;
 				} else if (isDouble(token)) {
-					//System.out.println("CONSTANT_DOUBLE: '"+token+"'");
+					// Constant Decimal
 					constantType = DataType.DECIMAL;
 					constant = token;
 				} else if (token.matches("[a-zA-Z0-9_]+")) {
+					// Attribute Name
+					if (attribute != null) {
+						throw new CreateTableException("Invalid domain constraint ("+constraint.getCheckCondition().toString()+").", parentTableName);
+					}
 					attribute = token;
 					if (!attribute.equals(parentColumnName)) {
 						throw new CreateTableException("Domain constraint on invalid attribute '"+attribute+"'.", parentTableName);
 					}
-					//System.out.println("ATTRIBUTE: '"+token+"'");
 				} else if (token.matches("'(.*?)'") || token.matches("\"(.*?)\"")) {
-					//System.out.println("CONSTANT_STRING: '"+token+"'");
+					// Constant String
 					constantType = DataType.CHAR;
 					constant = token;
 				} else if (token.equals("=") || token.equals("!=") || token.equals(">") || token.equals("<") || token.equals(">=") || token.equals("<=")) {
-					//System.out.println("OPERATOR: '"+token+"'");
+					// Operator
 					if (token.equals("=")) {
 						operator = "==";
 					} else {
@@ -58,12 +67,9 @@ public class ParseCheckConstraint {
 				} else if (token.matches("([ \t\r\n\f]*)")) {
 					// Skip white space
 				} else {
-					// Likely error if at this point
+					// Invalid token
 					throw new CreateTableException("Invalid token '"+token+"' in domain constraint for attribite '"+parentColumnName+"'.", parentTableName);
 				}
-				
-				// TODO: Throw an exception if there is ever an incomplete expression i.e. ATTRIBUTE OPERATOR _______
-				// TODO: Throw an exception if more than one of the above tokens are found in the same condition. i.e. ATTRIBUTE OPERATOR OPERATOR CONSTANT
 				
 				// Full expression found
 				if (attribute != null && operator != null && constant != null) {
@@ -72,7 +78,7 @@ public class ParseCheckConstraint {
 						throw new CreateTableException("Domain constraint compares attribute '"+attribute+"' of datatype '"+columnDataType.toString()+"' to constant of different type '"+constantType.toString()+"'.", parentTableName);
 					}
 					
-					// Create a constraint using information
+					// Create a constraint using the information
 					checkConstraintList.addConstraint(new CheckConstraint(parentTableName, parentColumnName, operator, constant));
 					// Reset information
 					attribute = null;
@@ -80,6 +86,12 @@ public class ParseCheckConstraint {
 					constant = null;
 				}
 			}
+			// Throw an exception if there is a partial domain constraint.
+			if (attribute != null || operator != null || constant != null) {
+				// This is really just added precaution. This should be handled as a syntax error by the sql parser.
+				throw new CreateTableException("Invalid domain constraint ("+constraint.getCheckCondition().toString()+").", parentTableName);
+			}
+			
 			return checkConstraintList;
 	}
 	
