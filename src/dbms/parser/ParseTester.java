@@ -6,38 +6,45 @@ import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
+import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 import dbms.table.exceptions.DropTableException;
 import dbms.table.exceptions.HelpException;
 import dbms.table.exceptions.InsertException;
+import dbms.table.exceptions.UpdateException;
 
 
 public class ParseTester {
-	
+
 	public static void main(String args[])
 	{
 		// Use Oracle DB Syntax
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		//sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		/*
+
 		sqlparser.sqltext = "CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));\n";
-        sqlparser.sqltext += "CREATE TABLE DEPARTMENT2(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid), FOREIGN KEY(deptid) REFERENCES DEPARTMENT(deptid));\n";
-        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (77, 'Computer Science','West Lafayette');";
-        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (9, 'Booooyaaaah','Hello world');";
-        sqlparser.sqltext += "INSERT INTO DEPARTMENT2 VALUES (9, 'Booooyaaaah','Hello world');";
-		*/
+		sqlparser.sqltext += "CREATE TABLE DEPARTMENT2(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid), FOREIGN KEY(deptid) REFERENCES DEPARTMENT(deptid));\n";
+		sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (77, 'Computer Science','West Lafayette');";
+		sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (9, 'Booooyaaaah','Hello world');";
+		sqlparser.sqltext += "INSERT INTO DEPARTMENT2 VALUES (9, 'Booooyaaaah','Hello world');";
+
+
+		sqlparser.sqltext += "UPDATE DEPARTMENT SET deptid=99, dname='4' WHERE deptid=11 OR deptid=22;";
+		//sqlparser.sqltext += "UPDATE DEPARTMENT SET location='WLafayette' WHERE deptid=11 OR deptid=22;";
+		//sqlparser.sqltext += "UPDATE STUDENT SET age=21,sname='Smith' WHERE sname='A.Smith';";
 
 		//sqlparser.sqltext = "HELP TABLES; \nhelp create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
-		
+
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
+		// TODO: Add batch and interactive mode
 		int ret = sqlparser.parse();
 		if (ret == 0) {
 			// Parse was successful
-			
+
 			for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
 				try {
 					parseAndPerformStmt(sqlparser.sqlstatements.get(i));
@@ -53,9 +60,12 @@ public class ParseTester {
 				} catch (InsertException insertExcept) {
 					// Inserting values into table was unsuccessful
 					System.out.println(insertExcept.getMessage());
+				} catch (UpdateException updateExcept) {
+					// Updating values into table was unsuccessful
+					System.out.println(updateExcept.getMessage());
 				}
 			}
-			
+
 			//for(int i=0;i<sqlparser.sqlstatements.size();i++){
 			//	analyzeStmt(sqlparser.sqlstatements.get(i));
 			//}
@@ -63,14 +73,27 @@ public class ParseTester {
 			System.out.println("Parse Error: "+sqlparser.getErrormessage());
 		}
 	}
-	
-	
-	
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException{
+
+
+
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException{
 
 		switch(stmt.sqlstatementtype) {
+		case sstupdate:
+			try {
+				ParseUpdate.updateValuesFromStatement((TUpdateSqlStatement)stmt);
+			} catch (Exception ex) {
+				// Gotta catch 'em all!
+				throw new UpdateException(ex.getMessage());
+			}
+			break;
 		case sstinsert:
-			ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt);
+			try {
+				ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt);
+			} catch (Exception ex) {
+				// Gotta catch 'em all!
+				throw new InsertException(ex.getMessage());
+			}
 			break;
 		case sstdroptable:
 			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt);

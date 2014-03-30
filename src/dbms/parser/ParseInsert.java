@@ -25,7 +25,7 @@ public class ParseInsert {
 	 * If unsuccessful, throws an exception and values are not inserted.
 	 */
 
-	protected static void insertValuesFromStatement(TInsertSqlStatement pStmt) throws InsertException{
+	protected static void insertValuesFromStatement(TInsertSqlStatement pStmt) throws InsertException, Exception {
 		String tableName = null;
 		if (pStmt.getTargetTable() != null) {
 			tableName = pStmt.getTargetTable().toString();
@@ -74,8 +74,8 @@ public class ParseInsert {
 				column = columnList.get(i);
 
 				// Check to make sure that the datatypes of the values and the columns they are being inserted into have the same datatype
-				if (getValueDataType(value) != column.getAttributeDataType()) {
-					if (getValueDataType(value) == DataType.CHAR) {
+				if (ConstraintVerifier.getValueDataType(value) != column.getAttributeDataType()) {
+					if (ConstraintVerifier.getValueDataType(value) == DataType.CHAR) {
 						throw new InsertException("Value "+value+" has different datatype than attribute '"+column.getColumnName()+"'.", tableName);
 					} else {
 						throw new InsertException("Value '"+value+"' has different datatype than attribute '"+column.getColumnName()+"'.", tableName);
@@ -83,7 +83,7 @@ public class ParseInsert {
 				}
 
 				// If type of value is CHAR, ensure the length constraint is not violated
-				if (getValueDataType(value) == DataType.CHAR) {
+				if (ConstraintVerifier.getValueDataType(value) == DataType.CHAR) {
 					// Remove quotes from value
 					if (value.startsWith("'")) {
 						value = value.replace("'", "");
@@ -91,14 +91,14 @@ public class ParseInsert {
 						value = value.replace("\"", "");
 					}
 					if (value.length() > column.getVarCharLength()) {
-						throw new InsertException("Value '"+value+"' is too long for type 'CHAR("+column.getVarCharLength()+")'.", tableName);
+						throw new InsertException("Trying to insert into column '"+column.getColumnName()+"' a value that violates 'CHAR("+column.getVarCharLength()+")' length constraint.", tableName);
 					}
 				}
 
 				// Check domain constrains
 				if (column.getCheckConstraintList() != null) {
 					try {
-						if (!ConstraintVerifier.passesCheckConstraints(value, getValueDataType("'"+value+"'"), column.getCheckConstraintList())) {
+						if (!ConstraintVerifier.passesCheckConstraints(value, ConstraintVerifier.getValueDataType("'"+value+"'"), column.getCheckConstraintList())) {
 							throw new InsertException("Value '"+value+"' violates a domain constraint.", tableName);
 						}
 					} catch (ScriptException e) {
@@ -125,22 +125,4 @@ public class ParseInsert {
 		table.addRow(new TableRow(row));
 		System.out.println("Tuple inserted successfully.");
 	}
-
-	public static DataType getValueDataType(String value) throws InsertException {
-		if (value.matches("[0-9]+")) {
-			// Constant Int
-			return DataType.INT;
-		} else if (ParseCheckConstraint.isDouble(value)) {
-			// Constant Decimal
-			return DataType.DECIMAL;
-		} else if (value.matches("'(.*?)'") || value.matches("\"(.*?)\"")) {
-			// Constant String
-			return DataType.CHAR;
-		} else if (value.matches("([ \t\r\n\f]*)")) {
-			// Skip white space
-		}
-		// Invalid token if at this point
-		throw new InsertException("Invalid value '"+value+"'.");
-	}
-
 }

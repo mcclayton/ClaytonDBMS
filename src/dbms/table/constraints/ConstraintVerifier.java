@@ -6,11 +6,13 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import dbms.parser.ParseCheckConstraint;
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.TableRow;
 import dbms.table.constraints.CheckConstraintList.LOGICAL_OPERATOR;
+import dbms.table.exceptions.InsertException;
 
 
 
@@ -128,5 +130,23 @@ public class ConstraintVerifier {
 		} else {
 			return true;
 		}
+	}
+	
+	
+	public static DataType getValueDataType(String value) throws Exception {
+		if (value.matches("[0-9]+")) {
+			// Constant Int
+			return DataType.INT;
+		} else if (ParseCheckConstraint.isDouble(value)) {
+			// Constant Decimal
+			return DataType.DECIMAL;
+		} else if (value.matches("'(.*?)'") || value.matches("\"(.*?)\"")) {
+			// Constant String
+			return DataType.CHAR;
+		} else if (value.matches("([ \t\r\n\f]*)")) {
+			// Skip white space
+		}
+		// Invalid token if at this point
+		throw new InsertException("Invalid value '"+value+"'.");
 	}
 }

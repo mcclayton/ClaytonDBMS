@@ -41,13 +41,14 @@ import gudusoft.gsqlparser.stmt.oracle.TPlsqlCreatePackage;
  */
 
 public class AnalyzeScript {
-	public static void main(String args[])
-	{
+	public static void main(String args[]) {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 		System.out.println("Selected SQL dialect: "+dbVendor.toString());
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		sqlparser.sqltext = "UPDATE DEPARTMENT SET location='WLafayette' WHERE deptid=11 OR deptid=22;";
+		sqlparser.sqltext += "UPDATE STUDENT SET age=21,sname='Smith' WHERE sname='A.Smith';";
 		
 		int ret = sqlparser.parse();
 		if (ret == 0){
