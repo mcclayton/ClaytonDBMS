@@ -21,7 +21,7 @@ public class CheckConstraintList {
 	
 	public CheckConstraintList(String fullCheckConstraintString) {
 		this.checkConstraintList = new ArrayList<CheckConstraint>();
-		logicalOperator = null;
+		logicalOperator = LOGICAL_OPERATOR.NONE;
 		this.fullCheckConstraintString = fullCheckConstraintString;
 	}
 	

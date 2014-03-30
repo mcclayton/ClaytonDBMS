@@ -109,19 +109,6 @@ public class ParseCreateTable {
 		switch(constraint.getConstraint_type()) {
 		case check:
 			CheckConstraintList checkConstraintList = ParseCheckConstraint.parseList(constraint, tableName, columnName, columnDataType);
-			// TODO: Remove this later -- just here for testing
-			/*
-			System.out.print("FULL EXPRESSION:");
-			for (CheckConstraint checkConstraint : checkConstraintList.getCheckConstraintList()) {
-				System.out.print(" "+checkConstraint.getParentColumnName()+" "+checkConstraint.getOperatorString()+" "+checkConstraint.getConstantString()+" "+checkConstraintList.getLogicalOperator());
-			}
-			try {
-				System.out.println(" >>> "+columnDataType.toString()+" --  "+CheckConstraint.passesCheckConstraints("Michael", columnDataType, checkConstraintList));
-			} catch (ScriptException e) {
-				System.out.println(e);
-			}
-			System.out.println();
-			*/
 			return checkConstraintList;
 		case primary_key:
 			throw new CreateTableException("Primary key must be specified after all attributes are listed.", tableName);

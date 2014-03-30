@@ -5,10 +5,13 @@ import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
 
 import java.util.ArrayList;
 
+import javax.script.ScriptException;
+
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.TableManager;
+import dbms.table.constraints.ConstraintVerifyer;
 import dbms.table.exceptions.InsertException;
 
 
@@ -61,26 +64,56 @@ public class ParseInsert {
 		if (pStmt.getValues() != null) {
 			TMultiTarget mt = pStmt.getValues().getMultiTarget(0);
 			String value;
+			TableColumn column;
+			// For every value, check to make sure constraints aren't violated, add to a row, and add the row to the table
 			for(int i=0; i<mt.getColumnList().size(); i++) {
 				value = mt.getColumnList().getResultColumn(i).toString();
-				
+				column = columnList.get(i);
+
 				// Check to make sure that the datatypes of the values and the columns they are being inserted into have the same datatype
-				if (getValueDataType(value) != columnList.get(i).getAttributeDataType()) {
-					throw new InsertException("Value '"+value+"' has different datatype than attribute '"+columnList.get(i).getColumnName()+"'.", tableName);
+				if (getValueDataType(value) != column.getAttributeDataType()) {
+					if (getValueDataType(value) == DataType.CHAR) {
+						throw new InsertException("Value "+value+" has different datatype than attribute '"+column.getColumnName()+"'.", tableName);
+					} else {
+						throw new InsertException("Value '"+value+"' has different datatype than attribute '"+column.getColumnName()+"'.", tableName);
+					}
 				}
-				
+
+				// If type of value is CHAR, ensure the length constraint is not violated
+				if (getValueDataType(value) == DataType.CHAR) {
+					// Remove quotes from value
+					if (value.startsWith("'")) {
+						value.replace("'", "");
+					} else if (value.startsWith("\"")) {
+						value.replace("\"", "");
+					}
+					if (value.length() > column.getVarCharLength()) {
+						throw new InsertException("Value '"+value+"' is too long for type 'CHAR("+column.getVarCharLength()+")'.", tableName);
+					}
+				}
+
+				// Check domain constrains
+				if (column.getCheckConstraintList() != null) {
+					try {
+						if (!ConstraintVerifyer.passesCheckConstraints(value, getValueDataType(value), column.getCheckConstraintList())) {
+							throw new InsertException("Value '"+value+"' violates a domain constraint.", tableName);
+						}
+					} catch (ScriptException e) {
+						throw new InsertException("Value '"+value+"' violates a domain constraint.", tableName);
+					}
+				}
+
+
 				// TODO: Check to make sure all values in primary key are unique
-				// TODO: If type of value is CHAR, ensure the length is not violated
-				// TODO: Check domain constrains
 				// TODO: Check foreign key constraints
-				// TODO: Add value to a value list and then add the value list to the table.
+				// TODO: Add value to a value list (row) and then add the value list (row) to the table.
 				System.out.println(mt.getColumnList().getResultColumn(i).toString());
 			}
 		}
 	}
 
 	public static DataType getValueDataType(String value) throws InsertException {
-	    if (value.matches("[0-9]+")) {
+		if (value.matches("[0-9]+")) {
 			// Constant Int
 			return DataType.INT;
 		} else if (ParseCheckConstraint.isDouble(value)) {
