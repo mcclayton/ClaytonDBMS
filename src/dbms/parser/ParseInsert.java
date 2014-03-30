@@ -98,16 +98,13 @@ public class ParseInsert {
 				// Check domain constrains
 				if (column.getCheckConstraintList() != null) {
 					try {
-						if (!ConstraintVerifier.passesCheckConstraints(value, getValueDataType(value), column.getCheckConstraintList())) {
+						if (!ConstraintVerifier.passesCheckConstraints(value, getValueDataType("'"+value+"'"), column.getCheckConstraintList())) {
 							throw new InsertException("Value '"+value+"' violates a domain constraint.", tableName);
 						}
 					} catch (ScriptException e) {
 						throw new InsertException("Value '"+value+"' violates a domain constraint.", tableName);
 					}
 				}
-
-				// TODO: Check foreign key constraints
-
 
 				// Add the object value to a value list (row).
 				row.add(value);
@@ -118,6 +115,10 @@ public class ParseInsert {
 				throw new InsertException("Primary key constraint violated.", tableName); 
 			}
 			
+			// Check foreign key constraints
+			if(!ConstraintVerifier.passesForeignKeysConstraint(table, row)) {
+				throw new InsertException("Foreign key constraint violated.", tableName); 
+			}
 			
 		}
 		// Add the value list (row) to the table.

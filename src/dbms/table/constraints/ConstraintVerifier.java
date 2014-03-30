@@ -61,7 +61,7 @@ public class ConstraintVerifier {
 		else return true;
 	}
 
-	
+
 	/*
 	 * Checks to make sure that every value in @row that is part of a primary key is collectively unique
 	 * as compared to the values that already exists in @table.
@@ -98,5 +98,35 @@ public class ConstraintVerifier {
 			}
 		}
 		return true;
+	}
+
+
+	public static boolean passesForeignKeysConstraint(Table table, ArrayList<Object> row) {
+		if (table.getForeignKeyConstraintList().size() > 0) { 
+			// Check to make sure all values in primary key are unique 
+			ArrayList<TableColumn> columns = table.getTableColumns();
+			ArrayList<ForeignKeyConstraint> foreignKeyConstraints = table.getForeignKeyConstraintList();
+
+			int index;
+			String foreignKeyValue = null; 
+			for (ForeignKeyConstraint foreignKey : foreignKeyConstraints) {
+				if (columns.contains(foreignKey.getColumn())) {
+					index = columns.indexOf(foreignKey.getColumn()); 	// Get the index of the columns that are the foreign keys
+					foreignKeyValue = (String) row.get(index);			// Get the value of the row corresponding to this column
+
+					// Get referenced table
+					Table referencedTable = foreignKey.getReferencedTable();
+					int referencedColumnIndex = referencedTable.getTableColumns().indexOf(foreignKey.getReferencedColumn());
+					for (TableRow referencedRow : referencedTable.getTableRows()) {
+						if (foreignKeyValue.equals((String) referencedRow.getElement(referencedColumnIndex))) {
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+		} else {
+			return true;
+		}
 	}
 }

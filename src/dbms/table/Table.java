@@ -16,7 +16,6 @@ public class Table {
 	private ArrayList<TableRow> tableRows = null;
 	
 	/* Table Key Constraints */
-	//TODO: Need to implement an attribute/constraint system for primary/foreign keys
 	private PrimaryKeyConstraint primaryKey = null;
 	private ArrayList<ForeignKeyConstraint> foreignKeyList = null;
 	

@@ -21,11 +21,16 @@ public class ParseTester {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
+		/*
 		sqlparser.sqltext = "CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));\n";
-        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (101, 'Computer Science','West Lafayette');";
+        sqlparser.sqltext += "CREATE TABLE DEPARTMENT2(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid), FOREIGN KEY(deptid) REFERENCES DEPARTMENT(deptid));\n";
+        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (77, 'Computer Science','West Lafayette');";
         sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (9, 'Booooyaaaah','Hello world');";
+        sqlparser.sqltext += "INSERT INTO DEPARTMENT2 VALUES (9, 'Booooyaaaah','Hello world');";
+		*/
+
 		//sqlparser.sqltext = "HELP TABLES; \nhelp create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
