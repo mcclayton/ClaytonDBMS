@@ -100,7 +100,7 @@ public class ParseCreateTable {
 		}
 		table.setForeignKeyConstraintList(foreignKeyList);
 		TableManager.addTable(table.getTableName(), table);
-		System.out.println("Table created successfully");
+		System.out.println("Table created successfully.");
 		return table;
 	}
 

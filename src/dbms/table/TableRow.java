@@ -13,5 +13,6 @@ public class TableRow {
 	
 	/* Getters and Setters */
 	public Object getElement(int columnIndex) {return this.row.get(columnIndex);}
+	public ArrayList<Object> getElementList() {return this.row;}
 		
 }

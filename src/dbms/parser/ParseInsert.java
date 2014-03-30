@@ -11,7 +11,8 @@ import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.TableManager;
-import dbms.table.constraints.ConstraintVerifyer;
+import dbms.table.TableRow;
+import dbms.table.constraints.ConstraintVerifier;
 import dbms.table.exceptions.InsertException;
 
 
@@ -60,6 +61,8 @@ public class ParseInsert {
 			}
 		}
 
+
+		ArrayList<Object> row = new ArrayList<Object>();	// The list of objects (values) that will form a row
 		// Get the values being inserted into the table
 		if (pStmt.getValues() != null) {
 			TMultiTarget mt = pStmt.getValues().getMultiTarget(0);
@@ -83,9 +86,9 @@ public class ParseInsert {
 				if (getValueDataType(value) == DataType.CHAR) {
 					// Remove quotes from value
 					if (value.startsWith("'")) {
-						value.replace("'", "");
+						value = value.replace("'", "");
 					} else if (value.startsWith("\"")) {
-						value.replace("\"", "");
+						value = value.replace("\"", "");
 					}
 					if (value.length() > column.getVarCharLength()) {
 						throw new InsertException("Value '"+value+"' is too long for type 'CHAR("+column.getVarCharLength()+")'.", tableName);
@@ -95,7 +98,7 @@ public class ParseInsert {
 				// Check domain constrains
 				if (column.getCheckConstraintList() != null) {
 					try {
-						if (!ConstraintVerifyer.passesCheckConstraints(value, getValueDataType(value), column.getCheckConstraintList())) {
+						if (!ConstraintVerifier.passesCheckConstraints(value, getValueDataType(value), column.getCheckConstraintList())) {
 							throw new InsertException("Value '"+value+"' violates a domain constraint.", tableName);
 						}
 					} catch (ScriptException e) {
@@ -103,13 +106,23 @@ public class ParseInsert {
 					}
 				}
 
-
-				// TODO: Check to make sure all values in primary key are unique
 				// TODO: Check foreign key constraints
-				// TODO: Add value to a value list (row) and then add the value list (row) to the table.
-				System.out.println(mt.getColumnList().getResultColumn(i).toString());
+
+
+				// Add the object value to a value list (row).
+				row.add(value);
 			}
+			
+			// Check primary key constraints
+			if(!ConstraintVerifier.passesPrimaryKeyConstraint(table, row)) {
+				throw new InsertException("Primary key constraint violated.", tableName); 
+			}
+			
+			
 		}
+		// Add the value list (row) to the table.
+		table.addRow(new TableRow(row));
+		System.out.println("Tuple inserted successfully.");
 	}
 
 	public static DataType getValueDataType(String value) throws InsertException {

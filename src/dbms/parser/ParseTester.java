@@ -24,7 +24,8 @@ public class ParseTester {
 		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
 		sqlparser.sqltext = "CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));\n";
-        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (101, 'ComputerScience','West Lafayette');";
+        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (101, 'Computer Science','West Lafayette');";
+        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (9, 'Booooyaaaah','Hello world');";
 		//sqlparser.sqltext = "HELP TABLES; \nhelp create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
@@ -49,7 +50,6 @@ public class ParseTester {
 					System.out.println(insertExcept.getMessage());
 				}
 			}
-			
 			
 			//for(int i=0;i<sqlparser.sqlstatements.size();i++){
 			//	analyzeStmt(sqlparser.sqlstatements.get(i));
