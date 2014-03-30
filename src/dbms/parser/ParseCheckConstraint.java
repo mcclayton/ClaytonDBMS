@@ -95,7 +95,7 @@ public class ParseCheckConstraint {
 			return checkConstraintList;
 	}
 	
-	private static boolean isDouble(String str) {
+	public static boolean isDouble(String str) {
         try {
             Double.parseDouble(str);
             return true;

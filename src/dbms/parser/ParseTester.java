@@ -21,9 +21,10 @@ public class ParseTester {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		sqlparser.sqltext = "INSERT INTO table_name (column1,column2,column3) VALUES (value1,value2,value3);";
+		sqlparser.sqltext = "CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));\n";
+        sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (101, 'Computer Sciences','West Lafayette');";
 		//sqlparser.sqltext = "HELP TABLES; \nhelp create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
 		
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
@@ -92,9 +93,10 @@ public class ParseTester {
 			}
 			break;
 		default:
-			System.out.println("<<< DEFAULT (UNHANDLED) >>>");
-			System.out.println(stmt.sqlstatementtype.toString());
-			System.out.println(stmt.toString());
+			System.out.println("Parse Error: Invalid command.");
+			//System.out.println("<<< DEFAULT (UNHANDLED) >>>");
+			//System.out.println(stmt.sqlstatementtype.toString());
+			//System.out.println(stmt.toString());
 		}
 	}
 
