@@ -45,6 +45,10 @@ public class ParseUpdate {
 		// Get the column being updated and the value it's being updated with, check to make sure the value passes all constraints
 		TableColumn column = null;
 		ArrayList<TableColumn> parentColumnList = new ArrayList<TableColumn>();
+		
+		ArrayList<TableColumn> columnsBeingUpdated = new ArrayList<TableColumn>();	// The columns that will be updated
+		ArrayList<String> valuesToUpdateWith = new ArrayList<String>();				// The values that columnsBeingUpdated will be updated with
+		
 		for(int i=0; i<pStmt.getResultColumnList().size(); i++) {
 			column = null;
 			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
@@ -65,9 +69,20 @@ public class ParseUpdate {
 				// passesAllConstraints should throw an exception if it doesn't pass, this is just an added precaution.
 				throw new UpdateException("Value '"+value+"' violates a domain constraint.", parentTableName);
 			}
+			
+			// If type of value is CHAR, remove the quotes before using it
+			if (ConstraintVerifier.getValueDataType(value) == DataType.CHAR) {
+				// Remove quotes from value
+				if (value.startsWith("'")) {
+					value = value.replace("'", "");
+				} else if (value.startsWith("\"")) {
+					value = value.replace("\"", "");
+				}
+			}
 
-			// TODO: Now that we know the value is valid, store the column and value somewhere so we can add them later after we have parsed the where clause
-
+			// Now that we know the value is valid, store the column and value somewhere so we can add them later after we have parsed the where clause
+			columnsBeingUpdated.add(column);
+			valuesToUpdateWith.add(value);
 		}
 
 		// Parse the where clause and update the matched rows with the new column values
@@ -79,7 +94,7 @@ public class ParseUpdate {
 			expression = "true;";
 		}
 		// Update the values of rows that match the expression and get the number of rows affected
-		rowsAffected = updateValues(parentTable, parentTable.getTableColumns(), expression);
+		rowsAffected = updateValues(parentTable, parentTable.getTableColumns(), expression, columnsBeingUpdated, valuesToUpdateWith);
 
 		// Update command successful
 		System.out.println(rowsAffected+" row(s) affected.");
@@ -133,7 +148,7 @@ public class ParseUpdate {
 	 * 
 	 * Returns the number of rows affected
 	 */
-	public static int updateValues(Table tableBeingUpdated, ArrayList<TableColumn> tableColumns, String whereClause) throws Exception {
+	public static int updateValues(Table tableBeingUpdated, ArrayList<TableColumn> tableColumns, String whereClause, ArrayList<TableColumn> columnsBeingUpdated, ArrayList<String> values) throws Exception {
 		int rowsAffected = 0;
 		ScriptEngineManager mgr = new ScriptEngineManager();
 		ScriptEngine engine = mgr.getEngineByName("JavaScript");
@@ -152,14 +167,21 @@ public class ParseUpdate {
 			}
 			try {
 				if (engine.eval(expression).toString().equals("true")) {
-					// TODO: update the values in the row***************************
-					//rowList.get(rowIndex).setElement(columnIndex, element)
+					// Update the values in the matched row
+					int indexOfUpdatingColumn = 0;
+					for (int columnIndex = 0; columnIndex < columnsBeingUpdated.size(); columnIndex++) {
+						indexOfUpdatingColumn = tableColumns.indexOf(columnsBeingUpdated.get(columnIndex));
+						// Update the value of the current matched row at columnsBeingUpdated with the new values
+						//TODO: if the value being updated is of type CHAR, remove the quotes when updating
+						rowList.get(rowIndex).setElement(indexOfUpdatingColumn, values.get(columnIndex));
+					}
 					rowsAffected++;
 				}
 			} catch (ScriptException e) {
 				throw new Exception("Invalid where clause '"+expression+"'.");
 			}
 		}
+		
 		return rowsAffected;
 	}
 }
