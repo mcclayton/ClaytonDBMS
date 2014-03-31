@@ -7,7 +7,7 @@ public class UpdateException extends Exception {
 
 	/*
 	 * This type of exception should be thrown if a runtime error occurs in the
-	 * insertion of values into a table from the parsing of an INSERT SQL statement.
+	 * updating of values in a table from the parsing of an UPDATE SQL statement.
 	 */
 	
 	public UpdateException(String message) {

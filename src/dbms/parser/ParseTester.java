@@ -4,11 +4,13 @@ import gudusoft.gsqlparser.EDbVendor;
 import gudusoft.gsqlparser.TCustomSqlStatement;
 import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
+import gudusoft.gsqlparser.stmt.TDeleteSqlStatement;
 import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
 import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
+import dbms.table.exceptions.DeleteRowsException;
 import dbms.table.exceptions.DropTableException;
 import dbms.table.exceptions.HelpException;
 import dbms.table.exceptions.InsertException;
@@ -63,6 +65,9 @@ public class ParseTester {
 				} catch (UpdateException updateExcept) {
 					// Updating values into table was unsuccessful
 					System.out.println(updateExcept.getMessage());
+				} catch (DeleteRowsException updateExcept) {
+					// Deleting rows from table was unsuccessful
+					System.out.println(updateExcept.getMessage());
 				}
 			}
 
@@ -76,9 +81,17 @@ public class ParseTester {
 
 
 
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException{
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException{
 
 		switch(stmt.sqlstatementtype) {
+		case sstdelete:
+			try {
+				ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt);
+			} catch (Exception ex) {
+				// Gotta catch 'em all!
+				throw new DeleteRowsException(ex.getMessage());
+			}
+			break;
 		case sstupdate:
 			try {
 				ParseUpdate.updateValuesFromStatement((TUpdateSqlStatement)stmt);

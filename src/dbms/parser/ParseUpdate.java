@@ -22,10 +22,10 @@ import dbms.table.exceptions.UpdateException;
 public class ParseUpdate {
 
 	/* 
-	 * Inserts values into an existing table from parsing an InsertStatement.
+	 * Updates values in an existing table from parsing an Update Statement.
 	 * 
-	 * If successful, inserts values into the specified table in the TABLE_MAP
-	 * If unsuccessful, throws an exception and values are not inserted.
+	 * If successful, updates values in the specified table in the TABLE_MAP
+	 * If unsuccessful, throws an exception and values are not updated.
 	 */
 
 	protected static void updateValuesFromStatement(TUpdateSqlStatement pStmt) throws UpdateException, Exception {
@@ -94,7 +94,7 @@ public class ParseUpdate {
 			expression = "true;";
 		}
 		// Update the values of rows that match the expression and get the number of rows affected
-		rowsAffected = updateValues(parentTable, parentTable.getTableColumns(), expression, columnsBeingUpdated, valuesToUpdateWith);
+		rowsAffected = updateValues(parentTable, expression, columnsBeingUpdated, valuesToUpdateWith);
 
 		// Update command successful
 		System.out.println(rowsAffected+" row(s) affected.");
@@ -148,21 +148,22 @@ public class ParseUpdate {
 	 * 
 	 * Returns the number of rows affected
 	 */
-	public static int updateValues(Table tableBeingUpdated, ArrayList<TableColumn> tableColumns, String whereClause, ArrayList<TableColumn> columnsBeingUpdated, ArrayList<String> values) throws Exception {
+	public static int updateValues(Table tableBeingUpdated, String whereClause, ArrayList<TableColumn> columnsBeingUpdated, ArrayList<String> values) throws Exception {
 		int rowsAffected = 0;
 		ScriptEngineManager mgr = new ScriptEngineManager();
 		ScriptEngine engine = mgr.getEngineByName("JavaScript");
 
+		ArrayList<TableColumn> parentTableColumns = tableBeingUpdated.getTableColumns();
 		ArrayList<TableRow> rowList = tableBeingUpdated.getTableRows();
 		String expression = null;
 		for (int rowIndex=0; rowIndex <  rowList.size(); rowIndex++) {
 			expression = whereClause;
 			// Replace all column names with values from that column for the given row index
-			for (int columnIndex = 0; columnIndex < tableColumns.size(); columnIndex++) {
+			for (int columnIndex = 0; columnIndex < parentTableColumns.size(); columnIndex++) {
 				if (rowList.get(rowIndex).getElement(columnIndex) instanceof String) {
-					expression = expression.replace(tableColumns.get(columnIndex).getColumnName(), "'"+rowList.get(rowIndex).getElement(columnIndex)+"'");
+					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), "'"+rowList.get(rowIndex).getElement(columnIndex)+"'");
 				} else {
-					expression = expression.replace(tableColumns.get(columnIndex).getColumnName(), (String) rowList.get(rowIndex).getElement(columnIndex));
+					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), (String) rowList.get(rowIndex).getElement(columnIndex));
 				}
 			}
 			try {
@@ -170,7 +171,7 @@ public class ParseUpdate {
 					// Update the values in the matched row
 					int indexOfUpdatingColumn = 0;
 					for (int columnIndex = 0; columnIndex < columnsBeingUpdated.size(); columnIndex++) {
-						indexOfUpdatingColumn = tableColumns.indexOf(columnsBeingUpdated.get(columnIndex));
+						indexOfUpdatingColumn = parentTableColumns.indexOf(columnsBeingUpdated.get(columnIndex));
 						// Update the value of the current matched row at columnsBeingUpdated with the new values
 						//TODO: if the value being updated is of type CHAR, remove the quotes when updating
 						rowList.get(rowIndex).setElement(indexOfUpdatingColumn, values.get(columnIndex));
