@@ -4,12 +4,17 @@ import gudusoft.gsqlparser.nodes.TExpression;
 import gudusoft.gsqlparser.nodes.TResultColumn;
 import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 
+import java.util.ArrayList;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.TableManager;
+import dbms.table.TableRow;
 import dbms.table.constraints.ConstraintVerifier;
 import dbms.table.exceptions.UpdateException;
 
@@ -24,50 +29,57 @@ public class ParseUpdate {
 	 */
 
 	protected static void updateValuesFromStatement(TUpdateSqlStatement pStmt) throws UpdateException, Exception {
-		// TODO: increment this counter each time a row is changed due to this update command
 		int rowsAffected = 0;
 
-		String tableName = null;
+		String parentTableName = null;
 		if (pStmt.getTargetTable() != null) {
-			tableName = pStmt.getTargetTable().toString();
-			if (!TableManager.tableExists(tableName)) {
-				throw new UpdateException("Table does not exist.", tableName);
+			parentTableName = pStmt.getTargetTable().toString();
+			if (!TableManager.tableExists(parentTableName)) {
+				throw new UpdateException("Table does not exist.", parentTableName);
 			}
 		}
 
 		// Get the table object being updated
-		Table table = TableManager.getTable(tableName);
+		Table parentTable = TableManager.getTable(parentTableName);
 
 		// Get the column being updated and the value it's being updated with, check to make sure the value passes all constraints
-		TableColumn column;
+		TableColumn column = null;
+		ArrayList<TableColumn> parentColumnList = new ArrayList<TableColumn>();
 		for(int i=0; i<pStmt.getResultColumnList().size(); i++) {
 			column = null;
 			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
 			TExpression expression = resultColumn.getExpr();
 
 			// Get the column of table being updated
-			column = TableManager.getTableColumnByName(tableName, expression.getLeftOperand().toString());
+			column = TableManager.getTableColumnByName(parentTableName, expression.getLeftOperand().toString());
 			if (column == null) {
-				throw new UpdateException("Trying to update value(s) of invalid column '"+expression.getLeftOperand().toString()+"'.", tableName);
+				throw new UpdateException("Trying to update value(s) of invalid column '"+expression.getLeftOperand().toString()+"'.", parentTableName);
 			}
+
+			parentColumnList.add(column);
 
 			String value = expression.getRightOperand().toString();
 
 			// Check to make sure the value that the column is being updated with passes all constraints and is valid 	
-			if (!passesAllConstraints(tableName, column, value)) {
+			if (!passesAllConstraints(parentTableName, column, value)) {
 				// passesAllConstraints should throw an exception if it doesn't pass, this is just an added precaution.
-				throw new UpdateException("Value '"+value+"' violates a domain constraint.", tableName);
+				throw new UpdateException("Value '"+value+"' violates a domain constraint.", parentTableName);
 			}
-			
+
 			// TODO: Now that we know the value is valid, store the column and value somewhere so we can add them later after we have parsed the where clause
 
-			System.out.println("\tcolumn:"+expression.getLeftOperand().toString()+"\tvalue:"+expression.getRightOperand().toString());
 		}
 
-		// TODO: Parse the where clause and update the matched rows with the new column values
+		// Parse the where clause and update the matched rows with the new column values
+		String expression = null;
 		if (pStmt.getWhereClause() != null) {
-			System.out.println("where clause:\n"+pStmt.getWhereClause().getCondition().toString());
+			expression = ParseWhereClause.parseList(pStmt.getWhereClause(), parentTable);
+		} else {
+			// Update all rows
+			expression = "true;";
 		}
+		// Update the values of rows that match the expression and get the number of rows affected
+		rowsAffected = updateValues(parentTable, parentTable.getTableColumns(), expression);
 
 		// Update command successful
 		System.out.println(rowsAffected+" row(s) affected.");
@@ -115,4 +127,39 @@ public class ParseUpdate {
 		return true;
 	}
 
+
+	/*
+	 * Updates the column values if they pass the where clause constraint.
+	 * 
+	 * Returns the number of rows affected
+	 */
+	public static int updateValues(Table tableBeingUpdated, ArrayList<TableColumn> tableColumns, String whereClause) throws Exception {
+		int rowsAffected = 0;
+		ScriptEngineManager mgr = new ScriptEngineManager();
+		ScriptEngine engine = mgr.getEngineByName("JavaScript");
+
+		ArrayList<TableRow> rowList = tableBeingUpdated.getTableRows();
+		String expression = null;
+		for (int rowIndex=0; rowIndex <  rowList.size(); rowIndex++) {
+			expression = whereClause;
+			// Replace all column names with values from that column for the given row index
+			for (int columnIndex = 0; columnIndex < tableColumns.size(); columnIndex++) {
+				if (rowList.get(rowIndex).getElement(columnIndex) instanceof String) {
+					expression = expression.replace(tableColumns.get(columnIndex).getColumnName(), "'"+rowList.get(rowIndex).getElement(columnIndex)+"'");
+				} else {
+					expression = expression.replace(tableColumns.get(columnIndex).getColumnName(), (String) rowList.get(rowIndex).getElement(columnIndex));
+				}
+			}
+			try {
+				if (engine.eval(expression).toString().equals("true")) {
+					// TODO: update the values in the row***************************
+					//rowList.get(rowIndex).setElement(columnIndex, element)
+					rowsAffected++;
+				}
+			} catch (ScriptException e) {
+				throw new Exception("Invalid where clause '"+expression+"'.");
+			}
+		}
+		return rowsAffected;
+	}
 }
