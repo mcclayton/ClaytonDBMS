@@ -25,9 +25,9 @@ public class ParseTester {
 		EDbVendor dbVendor = EDbVendor.dbvoracle;
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
+		//sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-
+		sqlparser.sqltext = "";
 		//sqlparser.sqltext = "CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));\n";
 		//sqlparser.sqltext += "CREATE TABLE DEPARTMENT2(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid), FOREIGN KEY(deptid) REFERENCES DEPARTMENT(deptid));\n";
 		//sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (77, 'Computer Science','West Lafayette');";
@@ -43,7 +43,13 @@ public class ParseTester {
 
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		// TODO: Add batch and interactive mode
-		int ret = sqlparser.parse();
+		int ret = -1;
+		try {
+			ret = sqlparser.parse();
+		} catch(NullPointerException nullExc) {
+			//TODO: Reprint console
+			ret = 0;
+		}
 		if (ret == 0) {
 			// Parse was successful
 

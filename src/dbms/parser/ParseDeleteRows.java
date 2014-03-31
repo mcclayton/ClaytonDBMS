@@ -92,7 +92,6 @@ public class ParseDeleteRows {
 		// Remove the rows now
 		for (TableRow row : rowsToRemove) {
 			if (rowList.contains(row)) {
-				System.out.println(parentTable.getTableName()+" ROW DELETED.");
 				rowList.remove(rowList.indexOf(row));
 			}
 		}
