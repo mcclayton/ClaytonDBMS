@@ -173,7 +173,6 @@ public class ParseUpdate {
 					for (int columnIndex = 0; columnIndex < columnsBeingUpdated.size(); columnIndex++) {
 						indexOfUpdatingColumn = parentTableColumns.indexOf(columnsBeingUpdated.get(columnIndex));
 						// Update the value of the current matched row at columnsBeingUpdated with the new values
-						//TODO: if the value being updated is of type CHAR, remove the quotes when updating
 						rowList.get(rowIndex).setElement(indexOfUpdatingColumn, values.get(columnIndex));
 					}
 					rowsAffected++;
