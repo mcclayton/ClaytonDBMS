@@ -2,7 +2,6 @@ package dbms.parser;
 
 import gudusoft.gsqlparser.TBaseType;
 import gudusoft.gsqlparser.nodes.TJoin;
-import gudusoft.gsqlparser.nodes.TJoinItem;
 import gudusoft.gsqlparser.nodes.TResultColumn;
 import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
 import dbms.table.exceptions.SelectException;
@@ -18,74 +17,44 @@ public class ParseSelect {
 	 */
 
 	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt) throws SelectException {
-		System.out.println("\nSelect:");
-		
+		System.out.println("SELECT:");
 		// Make sure syntax of select statement is correct
 		veryifySyntax(pStmt);
 
-		//select list
-		for(int i=0; i < pStmt.getResultColumnList().size();i++){
+		// Select list
+		for(int i=0; i < pStmt.getResultColumnList().size(); i++) {
 			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-			System.out.printf("Column: %s, Alias: %s\n",resultColumn.getExpr().toString(), (resultColumn.getAliasClause() == null)?"":resultColumn.getAliasClause().toString());
+			
+			// Don't allow aliases
+			if (resultColumn.getAliasClause() != null) {
+				throw new SelectException("Aliases are not supported.");
+			}
+			
+			System.out.printf("\tCOLUMN: %s\n", resultColumn.getExpr().toString());
 		}
 
-		//from clause, check this document for detailed information
-		//http://www.sqlparser.com/sql-parser-query-join-table.php
-		for(int i=0;i<pStmt.joins.size();i++){
+		// From clause
+		System.out.println("FROM:");
+		for(int i=0; i<pStmt.joins.size(); i++){
 			TJoin join = pStmt.joins.getJoin(i);
-			switch (join.getKind()){
+			switch (join.getKind()) {
 			case TBaseType.join_source_fake:
-				System.out.printf("table: %s, alias: %s\n",join.getTable().toString(),(join.getTable().getAliasClause() !=null)?join.getTable().getAliasClause().toString():"");
-				break;
-			case TBaseType.join_source_table:
-				System.out.printf("table: %s, alias: %s\n",join.getTable().toString(),(join.getTable().getAliasClause() !=null)?join.getTable().getAliasClause().toString():"");
-				for(int j=0;j<join.getJoinItems().size();j++){
-					TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
-					System.out.printf("Join type: %s\n",joinItem.getJoinType().toString());
-					System.out.printf("table: %s, alias: %s\n",joinItem.getTable().toString(),(joinItem.getTable().getAliasClause() !=null)?joinItem.getTable().getAliasClause().toString():"");
-					if (joinItem.getOnCondition() != null){
-						System.out.printf("On: %s\n",joinItem.getOnCondition().toString());
-					}else  if (joinItem.getUsingColumns() != null){
-						System.out.printf("using: %s\n",joinItem.getUsingColumns().toString());
-					}
+				// Valid Implicit Join
+				if (join.getTable().getAliasClause() != null) {
+					throw new SelectException("Aliases are not supported.");
 				}
-				break;
-			case TBaseType.join_source_join:
-				TJoin source_join = join.getJoin();
-				System.out.printf("table: %s, alias: %s\n",source_join.getTable().toString(),(source_join.getTable().getAliasClause() !=null)?source_join.getTable().getAliasClause().toString():"");
-
-				for(int j=0;j<source_join.getJoinItems().size();j++){
-					TJoinItem joinItem = source_join.getJoinItems().getJoinItem(j);
-					System.out.printf("source_join type: %s\n",joinItem.getJoinType().toString());
-					System.out.printf("table: %s, alias: %s\n",joinItem.getTable().toString(),(joinItem.getTable().getAliasClause() !=null)?joinItem.getTable().getAliasClause().toString():"");
-					if (joinItem.getOnCondition() != null){
-						System.out.printf("On: %s\n",joinItem.getOnCondition().toString());
-					}else  if (joinItem.getUsingColumns() != null){
-						System.out.printf("using: %s\n",joinItem.getUsingColumns().toString());
-					}
-				}
-
-				for(int j=0;j<join.getJoinItems().size();j++){
-					TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
-					System.out.printf("Join type: %s\n",joinItem.getJoinType().toString());
-					System.out.printf("table: %s, alias: %s\n",joinItem.getTable().toString(),(joinItem.getTable().getAliasClause() !=null)?joinItem.getTable().getAliasClause().toString():"");
-					if (joinItem.getOnCondition() != null){
-						System.out.printf("On: %s\n",joinItem.getOnCondition().toString());
-					}else  if (joinItem.getUsingColumns() != null){
-						System.out.printf("using: %s\n",joinItem.getUsingColumns().toString());
-					}
-				}
-
+				
+				System.out.printf("\tTABLE: %s\n", join.getTable().toString());
 				break;
 			default:
-				System.out.println("unknown type in join!");
-				break;
+				// Invalid Explicit Join
+				throw new SelectException("Explicit joins are not supported.");
 			}
 		}
 
-		//where clause
+		// Where clause
 		if (pStmt.getWhereClause() != null){
-			System.out.printf("where clause: \n%s\n", pStmt.getWhereClause().toString());
+			System.out.printf("WHERE CLAUSE: \n%s\n", pStmt.getWhereClause().getCondition().toString());
 		}
 	}
 
