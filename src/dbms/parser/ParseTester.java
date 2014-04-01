@@ -7,6 +7,7 @@ import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TDeleteSqlStatement;
 import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
+import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
 import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
@@ -14,6 +15,7 @@ import dbms.table.exceptions.DeleteRowsException;
 import dbms.table.exceptions.DropTableException;
 import dbms.table.exceptions.HelpException;
 import dbms.table.exceptions.InsertException;
+import dbms.table.exceptions.SelectException;
 import dbms.table.exceptions.UpdateException;
 
 
@@ -27,19 +29,8 @@ public class ParseTester {
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		//sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		sqlparser.sqltext = "";
-		//sqlparser.sqltext = "CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));\n";
-		//sqlparser.sqltext += "CREATE TABLE DEPARTMENT2(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid), FOREIGN KEY(deptid) REFERENCES DEPARTMENT(deptid));\n";
-		//sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (77, 'Computer Science','West Lafayette');";
-		//sqlparser.sqltext += "INSERT INTO DEPARTMENT VALUES (9, 'Booooyaaaah','Hello world');";
-		//sqlparser.sqltext += "INSERT INTO DEPARTMENT2 VALUES (9, 'Booooyaaaah','Hello world');";
+		sqlparser.sqltext = "SELECT sname,cname,fname FROM STUDENT,CLASS,FACULTY,ENROLLED WHERE snum=student_num AND fid=faculty_id AND cname=class_name;";
 
-
-		//sqlparser.sqltext += "UPDATE DEPARTMENT SET deptid=99, dname='4' WHERE deptid=11 OR deptid=22;";
-		//sqlparser.sqltext += "UPDATE DEPARTMENT SET location='WLafayette' WHERE deptid=11 OR deptid=22;";
-		//sqlparser.sqltext += "UPDATE STUDENT SET age=21,sname='Smith' WHERE sname='A.Smith';";
-
-		//sqlparser.sqltext = "HELP TABLES; \nhelp create table ;\nhelp drop table; \n help select;\nhelp insert; \n help delete; \n heLP UPdate;\n  Quit ;";
 
 		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
 		// TODO: Add batch and interactive mode
@@ -74,6 +65,9 @@ public class ParseTester {
 				} catch (DeleteRowsException updateExcept) {
 					// Deleting rows from table was unsuccessful
 					System.out.println(updateExcept.getMessage());
+				} catch (SelectException selectExcept) {
+					// Query was unsuccessful
+					System.out.println(selectExcept.getMessage());
 				}
 			}
 
@@ -87,9 +81,12 @@ public class ParseTester {
 
 
 
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException{
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException{
 
 		switch(stmt.sqlstatementtype) {
+		case sstselect:
+			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt);
+			break;
 		case sstdelete:
 			try {
 				ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt);

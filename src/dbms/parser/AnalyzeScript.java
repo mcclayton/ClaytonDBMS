@@ -47,8 +47,7 @@ public class AnalyzeScript {
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
-		sqlparser.sqltext = "UPDATE DEPARTMENT SET location='WLafayette' WHERE deptid=11 OR deptid=22;";
-		sqlparser.sqltext += "UPDATE STUDENT SET age=21,sname='Smith' WHERE sname='A.Smith';";
+		sqlparser.sqltext = "SELECT sname,cname,fname FROM STUDENT,CLASS,FACULTY,ENROLLED WHERE snum=student_num AND fid=faculty_id AND cname=class_name;";
 		
 		int ret = sqlparser.parse();
 		if (ret == 0){
