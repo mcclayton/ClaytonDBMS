@@ -110,6 +110,7 @@ public class ParseSelect {
 		Table tableOne = (Table) columnHashMap.keySet().toArray()[0];
 		Table tableTwo = (Table) columnHashMap.keySet().toArray()[1];
 		ArrayList<TableRow> crossedRows = getCrossProduct(tableOne, columnHashMap.get(tableOne), tableTwo, columnHashMap.get(tableTwo));
+		crossedRows = getCrossProduct(crossedRows, ((Table) columnHashMap.keySet().toArray()[1]).getTableRows());
 		System.out.println(">>> CROSS PRODUCT OF "+tableOne.getTableName()+" AND "+tableTwo.getTableName());
 		for (TableRow row : crossedRows) {
 			for (Object element : row.getElementList()) {
@@ -117,6 +118,9 @@ public class ParseSelect {
 			}
 			System.out.println();
 		}
+		
+		 getCrossProduct(crossedRows, ((Table) columnHashMap.keySet().toArray()[1]).getTableRows());
+			
 		
 		// TODO: For each table, take the cross product of them. 
 		// i.e. for T1, T2, T3. Perform T1 X T2 = T12. Then perform T12 X T3
@@ -205,6 +209,24 @@ public class ParseSelect {
 				}
 				for (Integer rowTwoIndex : rowTwoProjectedIndexes) {
 					elementList.add(rowTwo.getElement(rowTwoIndex));
+				}
+				resultRows.add(new TableRow(elementList));
+			}
+		}
+		return resultRows;
+	}
+	
+	private static ArrayList<TableRow> getCrossProduct(ArrayList<TableRow> rowListOne, ArrayList<TableRow> rowListTwo) {
+		// For each of the rows in tableOne, go through each of rows in tableTwo, create new Row (Rows1+Rows2)
+		ArrayList<TableRow> resultRows = new ArrayList<TableRow>();
+		for (TableRow rowOne : rowListOne) {
+			for (TableRow rowTwo : rowListTwo) {
+				ArrayList<Object> elementList = new ArrayList<Object>();
+				for (Object element : rowOne.getElementList()) {
+					elementList.add(element);
+				}
+				for (Object element : rowTwo.getElementList()) {
+					elementList.add(element);
 				}
 				resultRows.add(new TableRow(elementList));
 			}
