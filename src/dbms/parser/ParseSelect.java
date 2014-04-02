@@ -8,6 +8,10 @@ import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
@@ -97,39 +101,31 @@ public class ParseSelect {
 			columnHashMap.put(table, columnsInTable);
 		}
 
-		// Then take the cartesian product of each of the tables. Then apply the where constraint and return the matching rows.
+		// Take the cartesian product of each of the tables.
+		ArrayList<TableRow> masterRowList = getCrossProductOfAllTables(columnHashMap);
 
-		// TODO: Remove this test output
-		for (Object table : columnHashMap.keySet().toArray()) {
-			for (TableColumn column : columnHashMap.get((Table) table)) {
-				System.out.println(">>> COLUMN: "+column.getColumnName()+" belongs to TABLE: "+((Table) table).getTableName());
+		// Get all of the columns from the select statement
+		// TODO: Need to fix this --  Does not get ALL of the columns for some reason
+		ArrayList<TableColumn> allTableColumns = new ArrayList<TableColumn>();
+		for (Table table : columnHashMap.keySet()) {
+			for (TableColumn column : table.getTableColumns()) {
+				allTableColumns.add(column);
 			}
 		}
-
-		// TODO: Remove this test
-		Table tableOne = (Table) columnHashMap.keySet().toArray()[0];
-		Table tableTwo = (Table) columnHashMap.keySet().toArray()[1];
-		ArrayList<TableRow> crossedRows = getCrossProduct(tableOne, columnHashMap.get(tableOne), tableTwo, columnHashMap.get(tableTwo));
-		crossedRows = getCrossProduct(crossedRows, ((Table) columnHashMap.keySet().toArray()[1]).getTableRows());
-		System.out.println(">>> CROSS PRODUCT OF "+tableOne.getTableName()+" AND "+tableTwo.getTableName());
-		for (TableRow row : crossedRows) {
-			for (Object element : row.getElementList()) {
-				System.out.print((String) element+"\t");
-			}
-			System.out.println();
-		}
-		
-		 getCrossProduct(crossedRows, ((Table) columnHashMap.keySet().toArray()[1]).getTableRows());
-			
-		
-		// TODO: For each table, take the cross product of them. 
-		// i.e. for T1, T2, T3. Perform T1 X T2 = T12. Then perform T12 X T3
-		// TODO: After this final cross product, run through where clause and then project resulting columns
-
-		// WHERE clause
+		// Get the where clause expression
+		String expression = null;
 		if (pStmt.getWhereClause() != null) {
-			System.out.printf("WHERE CLAUSE: \n%s\n", pStmt.getWhereClause().getCondition().toString());
+			expression = ParseWhereClause.parseList(pStmt.getWhereClause(), allTableColumns);
+		} else {
+			expression = "true;";
 		}
+
+		// Print each of the selected rows that pass the where clause
+		try {
+			printSelectRows(masterRowList, allTableColumns, expression);
+		} catch (Exception e) {
+			throw new SelectException(e.getMessage());
+		} 
 	}
 
 
@@ -215,7 +211,7 @@ public class ParseSelect {
 		}
 		return resultRows;
 	}
-	
+
 	private static ArrayList<TableRow> getCrossProduct(ArrayList<TableRow> rowListOne, ArrayList<TableRow> rowListTwo) {
 		// For each of the rows in tableOne, go through each of rows in tableTwo, create new Row (Rows1+Rows2)
 		ArrayList<TableRow> resultRows = new ArrayList<TableRow>();
@@ -234,4 +230,74 @@ public class ParseSelect {
 		return resultRows;
 	}
 
+	private static ArrayList<TableRow> getCrossProductOfAllTables(HashMap<Table, ArrayList<TableColumn>> columnHashMap) throws SelectException {
+		// If only one table, return the table rows
+		if (columnHashMap.size() == 1) {
+			return ((Table) columnHashMap.keySet().toArray()[0]).getTableRows();
+		} else if (columnHashMap.size() > 1){
+			// There are more than one tables to get cartesian product of rows from
+
+			ArrayList<TableRow> crossedRows = new ArrayList<TableRow>();
+			Table tableOne = (Table) columnHashMap.keySet().toArray()[0];
+			Table tableTwo = (Table) columnHashMap.keySet().toArray()[1];
+			// Cross the first two tables
+			crossedRows = getCrossProduct(tableOne, columnHashMap.get(tableOne), tableTwo, columnHashMap.get(tableTwo));
+			// Remove those two tables from the hash map
+			columnHashMap.remove(tableOne);
+			columnHashMap.remove(tableTwo);
+			// If there are more tables, cross them one by one with crossedRows
+			for (Table table : columnHashMap.keySet()) {
+				crossedRows = getCrossProduct(crossedRows, table.getTableRows());
+			}
+			return crossedRows;
+		} else {
+			throw new SelectException("No tables found in statement.");
+		}
+	}
+	
+	/*
+	 * Prints out each of the rows that pass the where clause in the select statement.
+	 * 
+	 * Returns the number of rows printed
+	 */
+	//TODO: Need to project rows!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!************************
+	public static int printSelectRows(ArrayList<TableRow> allTablesRows, ArrayList<TableColumn> allTablesColumns, String whereClause) throws Exception {
+		int rowsAffected = 0;
+		ScriptEngineManager mgr = new ScriptEngineManager();
+		ScriptEngine engine = mgr.getEngineByName("JavaScript");
+
+		ArrayList<TableColumn> parentTableColumns = allTablesColumns;
+		ArrayList<TableRow> rowList = allTablesRows;
+		ArrayList<TableRow> rowsToPrint = new ArrayList<TableRow>();
+		String expression = null;
+		for (int rowIndex=0; rowIndex <  rowList.size(); rowIndex++) {
+			expression = whereClause;
+			// Replace all column names with values from that column for the given row index
+			for (int columnIndex = 0; columnIndex < parentTableColumns.size(); columnIndex++) {
+				if (rowList.get(rowIndex).getElement(columnIndex) instanceof String) {
+					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), "'"+rowList.get(rowIndex).getElement(columnIndex)+"'");
+				} else {
+					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), (String) rowList.get(rowIndex).getElement(columnIndex));
+				}
+			}
+			try {
+				if (engine.eval(expression).toString().equals("true")) {
+					// Keep track of the rows that will be deleted
+					rowsToPrint.add(rowList.get(rowIndex));					
+					rowsAffected++;
+				}
+			} catch (ScriptException e) {
+				throw new Exception("Invalid where clause '"+expression+"'.");
+			}
+		}
+		
+		// Print the rows now
+		for (TableRow row : rowsToPrint) {
+			for (Object element : row.getElementList()) {
+				System.out.print(element+"\t");
+			}
+			System.out.println();
+		}
+		return rowsAffected;
+	}
 }
