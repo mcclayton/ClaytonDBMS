@@ -76,3 +76,5 @@ INSERT INTO GRADE VALUES(80161,'ENG400', 'B');
 
 DELETE FROM GRADE;
 DELETE FROM ENROLLED WHERE student_num=16711 OR student_num=11;
+
+SELECT sname,cname,fname FROM STUDENT,CLASS,FACULTY,ENROLLED WHERE snum=student_num AND fid=faculty_id AND cname=class_name;

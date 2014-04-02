@@ -4,6 +4,13 @@ import gudusoft.gsqlparser.TBaseType;
 import gudusoft.gsqlparser.nodes.TJoin;
 import gudusoft.gsqlparser.nodes.TResultColumn;
 import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import dbms.table.Table;
+import dbms.table.TableColumn;
+import dbms.table.TableManager;
 import dbms.table.exceptions.SelectException;
 
 
@@ -17,25 +24,25 @@ public class ParseSelect {
 	 */
 
 	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt) throws SelectException {
-		System.out.println("SELECT:");
+		System.out.println("\n\nSELECT:");
 		// Make sure syntax of select statement is correct
 		veryifySyntax(pStmt);
 
 		// Select list
 		for(int i=0; i < pStmt.getResultColumnList().size(); i++) {
 			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-			
+
 			// Don't allow aliases
 			if (resultColumn.getAliasClause() != null) {
 				throw new SelectException("Aliases are not supported.");
 			}
-			
-			System.out.printf("\tCOLUMN: %s\n", resultColumn.getExpr().toString());
+
+			System.out.printf("\tSELECT COLUMN: %s\n", resultColumn.getExpr().toString());
 		}
 
-		// From clause
-		System.out.println("FROM:");
-		for(int i=0; i<pStmt.joins.size(); i++){
+		// Get the tables from the FROM clause
+		ArrayList<Table> tablesInFromClause = new ArrayList<Table>();
+		for(int i=0; i<pStmt.joins.size(); i++) {
 			TJoin join = pStmt.joins.getJoin(i);
 			switch (join.getKind()) {
 			case TBaseType.join_source_fake:
@@ -43,8 +50,12 @@ public class ParseSelect {
 				if (join.getTable().getAliasClause() != null) {
 					throw new SelectException("Aliases are not supported.");
 				}
-				
-				System.out.printf("\tTABLE: %s\n", join.getTable().toString());
+
+				if (TableManager.tableExists(join.getTable().toString())) {
+					tablesInFromClause.add(TableManager.getTable(join.getTable().toString()));
+				} else {
+					throw new SelectException("Table '"+join.getTable().toString()+"' in FROM clause does not exist.");
+				}
 				break;
 			default:
 				// Invalid Explicit Join
@@ -52,8 +63,37 @@ public class ParseSelect {
 			}
 		}
 
-		// Where clause
-		if (pStmt.getWhereClause() != null){
+		// Get the columns from the WHERE clause
+		ArrayList<String> columnNames;
+		try {
+			columnNames = ParseWhereClause.getAttributeNames(pStmt.getWhereClause(), tablesInFromClause);
+		} catch (Exception e) {
+			throw new SelectException(e.getMessage());
+		}
+
+		// TODO: Find out which columns go in which table. Then take the cartesian product of each of the tables. Then apply the where constraint and return the matching rows.
+		HashMap<Table, ArrayList<TableColumn>> columnHashMap = new HashMap<Table, ArrayList<TableColumn>>();	// Used to keep track of which tables columns belong to.
+		for (Table table : tablesInFromClause) {
+			ArrayList<TableColumn> columnsInTable = new ArrayList<TableColumn>();
+			for (String columnName : columnNames) {
+				if (table.getTableColumnByName(columnName) != null) {
+					// Add the column to the list of columns that belong to table
+					columnsInTable.add(table.getTableColumnByName(columnName));
+				}
+			}
+			columnHashMap.put(table, columnsInTable);
+		}
+		
+		// TODO: Remove this test output
+		for (Object table : columnHashMap.keySet().toArray()) {
+			for (TableColumn column : columnHashMap.get((Table) table)) {
+				System.out.println(">>> COLUMN: "+column.getColumnName()+" belongs to TABLE: "+((Table) table).getTableName());
+			}
+		}
+
+
+		// WHERE clause
+		if (pStmt.getWhereClause() != null) {
 			System.out.printf("WHERE CLAUSE: \n%s\n", pStmt.getWhereClause().getCondition().toString());
 		}
 	}
@@ -61,7 +101,7 @@ public class ParseSelect {
 
 	protected static void veryifySyntax(TSelectSqlStatement pStmt) throws SelectException {
 		// Query is a combined query statement
-		if (pStmt.isCombinedQuery()){
+		if (pStmt.isCombinedQuery()) {
 			String setOper="";
 			switch (pStmt.getSetOperator()){
 			case 1: 
