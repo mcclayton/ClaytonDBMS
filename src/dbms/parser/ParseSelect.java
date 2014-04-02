@@ -12,8 +12,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import com.sun.rowset.internal.Row;
-
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
@@ -31,12 +29,12 @@ public class ParseSelect {
 	 */
 
 	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt) throws SelectException {
-		System.out.println("\n\nSELECT:");
 		// Make sure syntax of select statement is correct
 		veryifySyntax(pStmt);
 
 		// Select list
 		ArrayList<String> projectionColumns = new ArrayList<String>();	// The names of all columns that will be in the final result
+		boolean asteriskFlag = false;
 		for(int i=0; i < pStmt.getResultColumnList().size(); i++) {
 			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
 
@@ -45,9 +43,16 @@ public class ParseSelect {
 				throw new SelectException("Aliases are not supported.");
 			}
 
-			// TODO: Implement projection and handle '*' operator here
 			// Add the names of the columns that will be projected to a list
-			if (!projectionColumns.contains(resultColumn.getExpr().toString())) {
+			if (resultColumn.getExpr().toString().equals("*")) {
+				if (!projectionColumns.isEmpty()) {
+					throw new SelectException("Invalid attribute '*'.");
+				}
+				asteriskFlag = true;
+			} else if (!projectionColumns.contains(resultColumn.getExpr().toString())) {
+				if (asteriskFlag) {
+					throw new SelectException("Invalid select statement.");
+				}
 				// TODO Ensure that the below column exists in one of the tables
 				projectionColumns.add(resultColumn.getExpr().toString());
 			}
@@ -93,19 +98,10 @@ public class ParseSelect {
 		// Find out which columns go in which table and put them into a hashmap to keep track of them.
 		HashMap<Table, ArrayList<TableColumn>> columnHashMap = new HashMap<Table, ArrayList<TableColumn>>();	// Used to keep track of which tables columns belong to.
 		for (Table table : tablesInFromClause) {
-			ArrayList<TableColumn> columnsInTable = new ArrayList<TableColumn>();
-			for (String columnName : columnNamesToCross) {
-				if (table.getTableColumnByName(columnName) != null) {
-					// Add the column to the list of columns that belong to table
-					columnsInTable.add(table.getTableColumnByName(columnName));
-				}
-			}
-			columnHashMap.put(table, columnsInTable);
-			// TODO: PUT THIS BACK IN IF ABOVE STATMENT DOESN"T WORK: columnHashMap.put(table, table.getTableColumns());
+			columnHashMap.put(table, table.getTableColumns());
 		}
 
 		// Get all of the columns from the select statement
-		// TODO: Need to fix this --  Does not get ALL of the columns for some reason
 		ArrayList<TableColumn> allTableColumns = new ArrayList<TableColumn>();
 		for (Table table : columnHashMap.keySet()) {
 			for (TableColumn column : columnHashMap.get(table)) {
@@ -123,21 +119,11 @@ public class ParseSelect {
 		} else {
 			expression = "true;";
 		}		
-		
-//		// TODO: remove test
-//		for (Object element : masterRowList.get(0).getElementList()) {
-//			System.out.print(element+"\t");
-//		}
-//		System.out.println();
-//		for (TableColumn column : allTableColumns) {
-//			System.out.print(column.getColumnName()+"\t");
-//		}
-//		System.out.println();
-//		System.out.println(">>>>>>> "+masterRowList.size()+" "+allTableColumns.size());
+
 
 		// Print each of the selected rows that pass the where clause
 		try {
-			printSelectRows(masterRowList, allTableColumns, expression);
+			printSelectRows(masterRowList, allTableColumns, projectionColumns, expression, asteriskFlag);
 		} catch (Exception e) {
 			throw new SelectException(e.getMessage());
 		} 
@@ -278,31 +264,27 @@ public class ParseSelect {
 	 * 
 	 * Returns the number of rows printed
 	 */
-	//TODO: Need to project rows!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!************************
-	public static int printSelectRows(ArrayList<TableRow> rowList, ArrayList<TableColumn> parentTableColumns, String whereClause) throws Exception {
-		System.out.println("PRINTING:");
-		
+	public static int printSelectRows(ArrayList<TableRow> allTablesRows, ArrayList<TableColumn> allTablesColumns, ArrayList<String> projectedColumnNames, String whereClause, boolean asteriskFlag) throws Exception {
 		int rowsAffected = 0;
 		ScriptEngineManager mgr = new ScriptEngineManager();
 		ScriptEngine engine = mgr.getEngineByName("JavaScript");
-		
+
 		ArrayList<TableRow> rowsToPrint = new ArrayList<TableRow>();
 		String expression = null;
-		for (int rowIndex=0; rowIndex < rowList.size(); rowIndex++) {
+		for (int rowIndex=0; rowIndex < allTablesRows.size(); rowIndex++) {
 			expression = whereClause;
 			// Replace all column names with values from that column for the given row index
-			for (int columnIndex = 0; columnIndex < parentTableColumns.size(); columnIndex++) {
-				if (rowList.get(rowIndex).getElement(columnIndex) instanceof String) {
-					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), "'"+rowList.get(rowIndex).getElement(columnIndex)+"'");
+			for (int columnIndex = 0; columnIndex < allTablesColumns.size(); columnIndex++) {
+				if (allTablesRows.get(rowIndex).getElement(columnIndex) instanceof String) {
+					expression = expression.replace(allTablesColumns.get(columnIndex).getColumnName(), "'"+allTablesRows.get(rowIndex).getElement(columnIndex)+"'");
 				} else {
-					// TODO: Test, remove
-					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), (String) rowList.get(rowIndex).getElement(columnIndex));
+					expression = expression.replace(allTablesColumns.get(columnIndex).getColumnName(), (String) allTablesRows.get(rowIndex).getElement(columnIndex));
 				}
 			}
 			try {
 				if (engine.eval(expression).toString().equals("true")) {
 					// Keep track of the rows that will be deleted
-					rowsToPrint.add(rowList.get(rowIndex));					
+					rowsToPrint.add(allTablesRows.get(rowIndex));					
 					rowsAffected++;
 				}
 			} catch (ScriptException e) {
@@ -310,12 +292,38 @@ public class ParseSelect {
 			}
 		}
 
-		// Print the rows now
-		for (TableRow row : rowsToPrint) {
-			for (Object element : row.getElementList()) {
-				System.out.print(element+"\t");
+		// Print all columns of result
+		if (asteriskFlag) {
+			for (TableColumn column : allTablesColumns) {
+				System.out.print(column.getColumnName()+"\t");
 			}
 			System.out.println();
+			for (TableRow row : rowsToPrint) {
+				for (Object element : row.getElementList()) {
+					System.out.print(element+"\t");
+				}
+				System.out.println();
+			}
+		} else {
+			// Get the indexes of columns to project onto the rows
+			ArrayList<Integer> projectionIndexes = new ArrayList<Integer>();
+			ArrayList<String> allTablesColumnNames = new ArrayList<String>();
+			for (TableColumn column : allTablesColumns) {
+				allTablesColumnNames.add(column.getColumnName());
+			}
+			for (String projectedColumnName : projectedColumnNames) {
+				System.out.print(projectedColumnName+"\t");
+				projectionIndexes.add(allTablesColumnNames.indexOf(projectedColumnName));
+			}
+			System.out.println();
+			
+			// Print the rows, but only the ones that are projected
+			for (TableRow row : rowsToPrint) {
+				for (Integer projectionIndex : projectionIndexes) {
+					System.out.print(row.getElement(projectionIndex)+"\t");
+				}
+				System.out.println();
+			}
 		}
 		return rowsAffected;
 	}
