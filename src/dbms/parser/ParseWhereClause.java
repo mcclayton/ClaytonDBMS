@@ -107,7 +107,7 @@ public class ParseWhereClause {
 					fullConstraintExpression += " "+logicalOperatorString+" ";
 				}
 
-				if (constantType != null) {
+				if (constant != null) {
 					fullConstraintExpression += attributeOne+" "+operator+" "+constant;
 				} else if (attributeTwo != null){
 					fullConstraintExpression += attributeOne+" "+operator+" "+attributeTwo;
@@ -133,7 +133,7 @@ public class ParseWhereClause {
 		return fullConstraintExpression;
 	}
 	
-	public static String parseList(TWhereClause whereClause, ArrayList<TableColumn> parentTableColumnns) throws SelectException {
+	public static String parseList(TWhereClause whereClause, ArrayList<TableColumn> columnList) throws SelectException {
 		TSourceTokenList tokenList = new TSourceTokenList();
 		whereClause.getCondition().addAllMyTokensToTokenList(tokenList, 0); // Put all tokens into list
 
@@ -146,7 +146,6 @@ public class ParseWhereClause {
 		String logicalOperatorString = null;
 		DataType constantType = DataType.UNKNOWN;
 
-		ArrayList<TableColumn> columnList = parentTableColumnns;
 		ArrayList<String> columnNameList = new ArrayList<String>();
 		// Add the parent column names to list
 		for (TableColumn column : columnList) {
@@ -225,7 +224,7 @@ public class ParseWhereClause {
 					fullConstraintExpression += " "+logicalOperatorString+" ";
 				}
 
-				if (constantType != null) {
+				if (constant != null) {
 					fullConstraintExpression += attributeOne+" "+operator+" "+constant;
 				} else if (attributeTwo != null){
 					fullConstraintExpression += attributeOne+" "+operator+" "+attributeTwo;
@@ -247,7 +246,7 @@ public class ParseWhereClause {
 
 		// Add ending semicolon to where clause expression
 		fullConstraintExpression += ";";
-
+		
 		return fullConstraintExpression;
 	}
 

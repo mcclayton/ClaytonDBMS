@@ -12,6 +12,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import com.sun.rowset.internal.Row;
+
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
@@ -99,26 +101,39 @@ public class ParseSelect {
 				}
 			}
 			columnHashMap.put(table, columnsInTable);
+			// TODO: PUT THIS BACK IN IF ABOVE STATMENT DOESN"T WORK: columnHashMap.put(table, table.getTableColumns());
 		}
-
-		// Take the cartesian product of each of the tables.
-		ArrayList<TableRow> masterRowList = getCrossProductOfAllTables(columnHashMap);
 
 		// Get all of the columns from the select statement
 		// TODO: Need to fix this --  Does not get ALL of the columns for some reason
 		ArrayList<TableColumn> allTableColumns = new ArrayList<TableColumn>();
 		for (Table table : columnHashMap.keySet()) {
-			for (TableColumn column : table.getTableColumns()) {
+			for (TableColumn column : columnHashMap.get(table)) {
 				allTableColumns.add(column);
 			}
 		}
+
+		// Take the cartesian product of each of the tables.
+		ArrayList<TableRow> masterRowList = getCrossProductOfAllTables(columnHashMap);
+
 		// Get the where clause expression
 		String expression = null;
 		if (pStmt.getWhereClause() != null) {
 			expression = ParseWhereClause.parseList(pStmt.getWhereClause(), allTableColumns);
 		} else {
 			expression = "true;";
-		}
+		}		
+		
+//		// TODO: remove test
+//		for (Object element : masterRowList.get(0).getElementList()) {
+//			System.out.print(element+"\t");
+//		}
+//		System.out.println();
+//		for (TableColumn column : allTableColumns) {
+//			System.out.print(column.getColumnName()+"\t");
+//		}
+//		System.out.println();
+//		System.out.println(">>>>>>> "+masterRowList.size()+" "+allTableColumns.size());
 
 		// Print each of the selected rows that pass the where clause
 		try {
@@ -232,9 +247,12 @@ public class ParseSelect {
 
 	private static ArrayList<TableRow> getCrossProductOfAllTables(HashMap<Table, ArrayList<TableColumn>> columnHashMap) throws SelectException {
 		// If only one table, return the table rows
-		if (columnHashMap.size() == 1) {
+
+		HashMap<Table, ArrayList<TableColumn>> columnHashMapCopy = columnHashMap;
+
+		if (columnHashMapCopy.size() == 1) {
 			return ((Table) columnHashMap.keySet().toArray()[0]).getTableRows();
-		} else if (columnHashMap.size() > 1){
+		} else if (columnHashMapCopy.size() > 1){
 			// There are more than one tables to get cartesian product of rows from
 
 			ArrayList<TableRow> crossedRows = new ArrayList<TableRow>();
@@ -254,29 +272,30 @@ public class ParseSelect {
 			throw new SelectException("No tables found in statement.");
 		}
 	}
-	
+
 	/*
 	 * Prints out each of the rows that pass the where clause in the select statement.
 	 * 
 	 * Returns the number of rows printed
 	 */
 	//TODO: Need to project rows!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!************************
-	public static int printSelectRows(ArrayList<TableRow> allTablesRows, ArrayList<TableColumn> allTablesColumns, String whereClause) throws Exception {
+	public static int printSelectRows(ArrayList<TableRow> rowList, ArrayList<TableColumn> parentTableColumns, String whereClause) throws Exception {
+		System.out.println("PRINTING:");
+		
 		int rowsAffected = 0;
 		ScriptEngineManager mgr = new ScriptEngineManager();
 		ScriptEngine engine = mgr.getEngineByName("JavaScript");
-
-		ArrayList<TableColumn> parentTableColumns = allTablesColumns;
-		ArrayList<TableRow> rowList = allTablesRows;
+		
 		ArrayList<TableRow> rowsToPrint = new ArrayList<TableRow>();
 		String expression = null;
-		for (int rowIndex=0; rowIndex <  rowList.size(); rowIndex++) {
+		for (int rowIndex=0; rowIndex < rowList.size(); rowIndex++) {
 			expression = whereClause;
 			// Replace all column names with values from that column for the given row index
 			for (int columnIndex = 0; columnIndex < parentTableColumns.size(); columnIndex++) {
 				if (rowList.get(rowIndex).getElement(columnIndex) instanceof String) {
 					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), "'"+rowList.get(rowIndex).getElement(columnIndex)+"'");
 				} else {
+					// TODO: Test, remove
 					expression = expression.replace(parentTableColumns.get(columnIndex).getColumnName(), (String) rowList.get(rowIndex).getElement(columnIndex));
 				}
 			}
@@ -290,7 +309,7 @@ public class ParseSelect {
 				throw new Exception("Invalid where clause '"+expression+"'.");
 			}
 		}
-		
+
 		// Print the rows now
 		for (TableRow row : rowsToPrint) {
 			for (Object element : row.getElementList()) {
