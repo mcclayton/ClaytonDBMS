@@ -11,6 +11,7 @@ import java.util.HashMap;
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
+import dbms.table.TableRow;
 import dbms.table.exceptions.SelectException;
 
 
@@ -29,6 +30,7 @@ public class ParseSelect {
 		veryifySyntax(pStmt);
 
 		// Select list
+		ArrayList<String> projectionColumns = new ArrayList<String>();	// The names of all columns that will be in the final result
 		for(int i=0; i < pStmt.getResultColumnList().size(); i++) {
 			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
 
@@ -37,7 +39,12 @@ public class ParseSelect {
 				throw new SelectException("Aliases are not supported.");
 			}
 
-			System.out.printf("\tSELECT COLUMN: %s\n", resultColumn.getExpr().toString());
+			// TODO: Implement projection and handle '*' operator here
+			// Add the names of the columns that will be projected to a list
+			if (!projectionColumns.contains(resultColumn.getExpr().toString())) {
+				// TODO Ensure that the below column exists in one of the tables
+				projectionColumns.add(resultColumn.getExpr().toString());
+			}
 		}
 
 		// Get the tables from the FROM clause
@@ -64,18 +71,24 @@ public class ParseSelect {
 		}
 
 		// Get the columns from the WHERE clause
-		ArrayList<String> columnNames;
+		ArrayList<String> columnNamesToCross;	// The names of all the columns that will be involved in the cross product
 		try {
-			columnNames = ParseWhereClause.getAttributeNames(pStmt.getWhereClause(), tablesInFromClause);
+			columnNamesToCross = ParseWhereClause.getAttributeNames(pStmt.getWhereClause(), tablesInFromClause);
 		} catch (Exception e) {
 			throw new SelectException(e.getMessage());
 		}
+		// Add the projected columns to columnNamesToCross if they aren't already in there
+		for (String columnName : projectionColumns) {
+			if (!columnNamesToCross.contains(columnName)) {
+				columnNamesToCross.add(columnName);
+			}
+		}
 
-		// TODO: Find out which columns go in which table. Then take the cartesian product of each of the tables. Then apply the where constraint and return the matching rows.
+		// Find out which columns go in which table and put them into a hashmap to keep track of them.
 		HashMap<Table, ArrayList<TableColumn>> columnHashMap = new HashMap<Table, ArrayList<TableColumn>>();	// Used to keep track of which tables columns belong to.
 		for (Table table : tablesInFromClause) {
 			ArrayList<TableColumn> columnsInTable = new ArrayList<TableColumn>();
-			for (String columnName : columnNames) {
+			for (String columnName : columnNamesToCross) {
 				if (table.getTableColumnByName(columnName) != null) {
 					// Add the column to the list of columns that belong to table
 					columnsInTable.add(table.getTableColumnByName(columnName));
@@ -83,7 +96,9 @@ public class ParseSelect {
 			}
 			columnHashMap.put(table, columnsInTable);
 		}
-		
+
+		// Then take the cartesian product of each of the tables. Then apply the where constraint and return the matching rows.
+
 		// TODO: Remove this test output
 		for (Object table : columnHashMap.keySet().toArray()) {
 			for (TableColumn column : columnHashMap.get((Table) table)) {
@@ -91,6 +106,21 @@ public class ParseSelect {
 			}
 		}
 
+		// TODO: Remove this test
+		Table tableOne = (Table) columnHashMap.keySet().toArray()[0];
+		Table tableTwo = (Table) columnHashMap.keySet().toArray()[1];
+		ArrayList<TableRow> crossedRows = getCrossProduct(tableOne, columnHashMap.get(tableOne), tableTwo, columnHashMap.get(tableTwo));
+		System.out.println(">>> CROSS PRODUCT OF "+tableOne.getTableName()+" AND "+tableTwo.getTableName());
+		for (TableRow row : crossedRows) {
+			for (Object element : row.getElementList()) {
+				System.out.print((String) element+"\t");
+			}
+			System.out.println();
+		}
+		
+		// TODO: For each table, take the cross product of them. 
+		// i.e. for T1, T2, T3. Perform T1 X T2 = T12. Then perform T12 X T3
+		// TODO: After this final cross product, run through where clause and then project resulting columns
 
 		// WHERE clause
 		if (pStmt.getWhereClause() != null) {
@@ -152,6 +182,34 @@ public class ParseSelect {
 		if (pStmt.getLimitClause() != null){
 			throw new SelectException("'LIMIT' operation is not supported.");
 		}
+	}
+
+	private static ArrayList<TableRow> getCrossProduct(Table tableOne, ArrayList<TableColumn> projectedColumnsOne, Table tableTwo, ArrayList<TableColumn> projectedColumnsTwo) {
+		// Get the row indexes of the projected columns
+		ArrayList<Integer> rowOneProjectedIndexes = new ArrayList<Integer>();
+		ArrayList<Integer> rowTwoProjectedIndexes = new ArrayList<Integer>();
+		for (TableColumn column : projectedColumnsOne) {
+			rowOneProjectedIndexes.add(tableOne.getTableColumns().indexOf(column));
+		}
+		for (TableColumn column : projectedColumnsTwo) {
+			rowTwoProjectedIndexes.add(tableTwo.getTableColumns().indexOf(column));
+		}
+
+		// For each of the projected rows in tableOne, go through each of the projected rows in tableTwo, create new Row (projectedRows1+projectedRows2)
+		ArrayList<TableRow> resultRows = new ArrayList<TableRow>();
+		for (TableRow rowOne : tableOne.getTableRows()) {
+			for (TableRow rowTwo : tableTwo.getTableRows()) {
+				ArrayList<Object> elementList = new ArrayList<Object>();
+				for (Integer rowOneIndex : rowOneProjectedIndexes) {
+					elementList.add(rowOne.getElement(rowOneIndex));
+				}
+				for (Integer rowTwoIndex : rowTwoProjectedIndexes) {
+					elementList.add(rowTwo.getElement(rowTwoIndex));
+				}
+				resultRows.add(new TableRow(elementList));
+			}
+		}
+		return resultRows;
 	}
 
 }
