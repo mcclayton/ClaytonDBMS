@@ -32,32 +32,6 @@ public class ParseSelect {
 		// Make sure syntax of select statement is correct
 		veryifySyntax(pStmt);
 
-		// Select list
-		ArrayList<String> projectionColumns = new ArrayList<String>();	// The names of all columns that will be in the final result
-		boolean asteriskFlag = false;
-		for(int i=0; i < pStmt.getResultColumnList().size(); i++) {
-			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-
-			// Don't allow aliases
-			if (resultColumn.getAliasClause() != null) {
-				throw new SelectException("Aliases are not supported.");
-			}
-
-			// Add the names of the columns that will be projected to a list
-			if (resultColumn.getExpr().toString().equals("*")) {
-				if (!projectionColumns.isEmpty()) {
-					throw new SelectException("Invalid attribute '*'.");
-				}
-				asteriskFlag = true;
-			} else if (!projectionColumns.contains(resultColumn.getExpr().toString())) {
-				if (asteriskFlag) {
-					throw new SelectException("Invalid select statement.");
-				}
-				// TODO Ensure that the below column exists in one of the tables
-				projectionColumns.add(resultColumn.getExpr().toString());
-			}
-		}
-
 		// Get the tables from the FROM clause
 		ArrayList<Table> tablesInFromClause = new ArrayList<Table>();
 		for(int i=0; i<pStmt.joins.size(); i++) {
@@ -78,6 +52,44 @@ public class ParseSelect {
 			default:
 				// Invalid Explicit Join
 				throw new SelectException("Explicit joins are not supported.");
+			}
+		}
+
+		// Select list
+		ArrayList<String> projectionColumns = new ArrayList<String>();	// The names of all columns that will be in the final result
+		boolean asteriskFlag = false;
+		boolean validColumn;
+		String columnNameInSelect;
+		for(int i=0; i < pStmt.getResultColumnList().size(); i++) {
+			TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
+
+			// Don't allow aliases
+			if (resultColumn.getAliasClause() != null) {
+				throw new SelectException("Aliases are not supported.");
+			}
+
+			// Add the names of the columns that will be projected to a list
+			if (resultColumn.getExpr().toString().equals("*")) {
+				if (!projectionColumns.isEmpty()) {
+					throw new SelectException("Invalid attribute '*'.");
+				}
+				asteriskFlag = true;
+			} else if (!projectionColumns.contains(resultColumn.getExpr().toString())) {
+				if (asteriskFlag) {
+					throw new SelectException("Invalid select statement.");
+				}
+				// Ensure that the below column exists in one of the tables
+				validColumn = false;
+				columnNameInSelect = resultColumn.getExpr().toString();
+				for (Table table : tablesInFromClause) {
+					if (table.getTableColumnByName(columnNameInSelect) != null) {
+						projectionColumns.add(columnNameInSelect);
+						validColumn = true;
+					}
+				}
+				if (!validColumn) {
+					throw new SelectException("Invalid attribute '"+columnNameInSelect+"'.");
+				}
 			}
 		}
 
@@ -316,7 +328,7 @@ public class ParseSelect {
 				projectionIndexes.add(allTablesColumnNames.indexOf(projectedColumnName));
 			}
 			System.out.println();
-			
+
 			// Print the rows, but only the ones that are projected
 			for (TableRow row : rowsToPrint) {
 				for (Integer projectionIndex : projectionIndexes) {
