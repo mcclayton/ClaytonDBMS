@@ -105,9 +105,15 @@ public class ParseMain {
 			String statement = stmt.toString();
 			// TODO: Actually implement the creation of a user. Check to see if it exists before adding.
 			if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-a([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-				System.out.println("CREATING USER OF TYPE A.");
+				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
+				Scanner scanner = new Scanner(statement);
+				String user = scanner.next();
+				System.out.println("CREATING USER '"+user+"' OF TYPE A. ");
 			} else if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-b([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-				System.out.println("CREATING USER OF TYPE B.");
+				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
+				Scanner scanner = new Scanner(statement);
+				String user = scanner.next();
+				System.out.println("CREATING USER '"+user+"' OF TYPE B. ");				
 			} else {
 				System.out.println("UserCreate Error: Invalid user create statement.");
 			}
@@ -120,7 +126,11 @@ public class ParseMain {
 			// TODO: Actually implement the deletion of a user. Check to see if it exists before deleting.
 			// If the statement is a delete user statement
 			if (deleteStatement.matches("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-				System.out.println("Deleting a user.");
+				deleteStatement = deleteStatement.replaceFirst("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
+				deleteStatement = deleteStatement.replace(";", "");
+				Scanner scanner = new Scanner(deleteStatement);
+				String user = scanner.next();
+				System.out.println("Deleting a user '"+user+"'.");
 			} else {
 				// Statement is a delete rows statement
 				try {
