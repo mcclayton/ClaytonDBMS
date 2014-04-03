@@ -9,6 +9,10 @@ import gudusoft.gsqlparser.stmt.TDropTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
 import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
 import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
+
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 import dbms.table.exceptions.DeleteRowsException;
@@ -19,63 +23,76 @@ import dbms.table.exceptions.SelectException;
 import dbms.table.exceptions.UpdateException;
 
 
-public class ParseTester {
+public class ParseMain {
 
-	public static void main(String args[])
-	{
-		// Use Oracle DB Syntax
-		EDbVendor dbVendor = EDbVendor.dbvoracle;
+	public static void main(String args[]) {
+		final String PROMPT_TEXT = "ClaytonDB> ";
 
+		EDbVendor dbVendor = EDbVendor.dbvoracle;	// Use Oracle DB Syntax
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
-		sqlparser.sqlfilename = "./sql/admin.sql";	// The file to be parsed. Use 'sqltext' if only single statement
 
-		//sqlparser. = "SELECT sname,cname,fname FROM STUDENT,CLASS,FACULTY,ENROLLED WHERE snum=student_num AND fid=faculty_id AND cname=class_name;";
+		boolean shouldQuit = false;
+		boolean emptyStatement = false;
+		Scanner scanner = new Scanner(System.in);
 
+		while(!shouldQuit) {
+			emptyStatement = false;	// Assume the statement will not be  empty
+			System.out.print(PROMPT_TEXT);
 
-		// TODO: Split .sql files into statements by semicolons so that a parse error in one statement doesn't affect them all.
-		// TODO: Add batch and interactive mode
-		int ret = -1;
-		try {
-			ret = sqlparser.parse();
-		} catch(NullPointerException nullExc) {
-			//TODO: Reprint console
-			ret = 0;
-		}
-		if (ret == 0) {
-			// Parse was successful
-
-			for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
-				try {
-					parseAndPerformStmt(sqlparser.sqlstatements.get(i));
-				} catch (CreateTableException cTabExcept) {
-					// Parsing/Creating table was unsuccessful
-					System.out.println(cTabExcept.getMessage());
-				} catch (AttributeException aExcept) {
-					// Parsing/Creating table was unsuccessful
-					System.out.println(aExcept.getMessage());
-				} catch (DropTableException dTabExcept) {
-					// Parsing/Dropping table was unsuccessful
-					System.out.println(dTabExcept.getMessage());
-				} catch (InsertException insertExcept) {
-					// Inserting values into table was unsuccessful
-					System.out.println(insertExcept.getMessage());
-				} catch (UpdateException updateExcept) {
-					// Updating values into table was unsuccessful
-					System.out.println(updateExcept.getMessage());
-				} catch (DeleteRowsException updateExcept) {
-					// Deleting rows from table was unsuccessful
-					System.out.println(updateExcept.getMessage());
-				} catch (SelectException selectExcept) {
-					// Query was unsuccessful
-					System.out.println(selectExcept.getMessage());
-				}
+			try {
+				while ((sqlparser.sqltext = scanner.nextLine()).matches("([ \t\f]*)"));
+			} catch (NoSuchElementException e) {
+				// Reached the end of file
+				shouldQuit = true;
+				emptyStatement = true;
+			}
+			// Check to see if the statement is empty
+			if (sqlparser.getSqltext().isEmpty()) {
+				emptyStatement = true;
 			}
 
-			//for(int i=0;i<sqlparser.sqlstatements.size();i++){
-			//	analyzeStmt(sqlparser.sqlstatements.get(i));
-			//}
-		} else{
-			System.out.println("Parse Error: "+sqlparser.getErrormessage());
+			// Parse the statement
+			int ret = -1;
+			try {
+				ret = sqlparser.parse();
+			} catch(Exception nullExc) {
+				emptyStatement = true;
+			}
+
+			if (emptyStatement) {
+				// Don't do anything. The statement was empty
+			} else if (ret == 0) {
+				// Parse was successful
+
+				for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
+					try {
+						parseAndPerformStmt(sqlparser.sqlstatements.get(i));
+					} catch (CreateTableException cTabExcept) {
+						// Parsing/Creating table was unsuccessful
+						System.out.println(cTabExcept.getMessage());
+					} catch (AttributeException aExcept) {
+						// Parsing/Creating table was unsuccessful
+						System.out.println(aExcept.getMessage());
+					} catch (DropTableException dTabExcept) {
+						// Parsing/Dropping table was unsuccessful
+						System.out.println(dTabExcept.getMessage());
+					} catch (InsertException insertExcept) {
+						// Inserting values into table was unsuccessful
+						System.out.println(insertExcept.getMessage());
+					} catch (UpdateException updateExcept) {
+						// Updating values into table was unsuccessful
+						System.out.println(updateExcept.getMessage());
+					} catch (DeleteRowsException updateExcept) {
+						// Deleting rows from table was unsuccessful
+						System.out.println(updateExcept.getMessage());
+					} catch (SelectException selectExcept) {
+						// Query was unsuccessful
+						System.out.println(selectExcept.getMessage());
+					}
+				}
+			} else {
+				System.out.println("Parse Error: "+sqlparser.getErrormessage());
+			}
 		}
 	}
 
@@ -138,9 +155,6 @@ public class ParseTester {
 			break;
 		default:
 			System.out.println("Parse Error: Invalid command.");
-			//System.out.println("<<< DEFAULT (UNHANDLED) >>>");
-			//System.out.println(stmt.sqlstatementtype.toString());
-			//System.out.println(stmt.toString());
 		}
 	}
 
