@@ -21,6 +21,8 @@ import dbms.table.exceptions.SelectException;
 
 public class ParseSelect {
 
+	// TODO: Add multiple threads perhaps when crossing > 2 tables.
+	
 	/* 
 	 * Displays the tuples from the result set that is produced from parsing a Select Statement.
 	 * 

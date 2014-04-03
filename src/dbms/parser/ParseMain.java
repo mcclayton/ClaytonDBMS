@@ -101,15 +101,34 @@ public class ParseMain {
 	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException{
 
 		switch(stmt.sqlstatementtype) {
+		case sstoraclecreateuser:
+			String statement = stmt.toString();
+			// TODO: Actually implement the creation of a user. Check to see if it exists before adding.
+			if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-a([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
+				System.out.println("CREATING USER OF TYPE A.");
+			} else if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-b([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
+				System.out.println("CREATING USER OF TYPE B.");
+			} else {
+				System.out.println("UserCreate Error: Invalid user create statement.");
+			}
+			break;
 		case sstselect:
 			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt);
 			break;
 		case sstdelete:
-			try {
-				ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt);
-			} catch (Exception ex) {
-				// Gotta catch 'em all!
-				throw new DeleteRowsException(ex.getMessage());
+			String deleteStatement = stmt.toString();
+			// TODO: Actually implement the deletion of a user. Check to see if it exists before deleting.
+			// If the statement is a delete user statement
+			if (deleteStatement.matches("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
+				System.out.println("Deleting a user.");
+			} else {
+				// Statement is a delete rows statement
+				try {
+					ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt);
+				} catch (Exception ex) {
+					// Gotta catch 'em all!
+					throw new DeleteRowsException(ex.getMessage());
+				}
 			}
 			break;
 		case sstupdate:

@@ -47,8 +47,8 @@ public class AnalyzeScript {
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
-		sqlparser.sqltext = "SELECT sname,cname,fname FROM STUDENT,CLASS,FACULTY,ENROLLED WHERE snum=student_num AND fid=faculty_id AND cname=class_name;";
-		
+		sqlparser.sqltext = "DELETE USER user_name;";
+
 		int ret = sqlparser.parse();
 		if (ret == 0){
 			for(int i=0;i<sqlparser.sqlstatements.size();i++){
