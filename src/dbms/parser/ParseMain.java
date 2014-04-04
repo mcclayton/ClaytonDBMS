@@ -285,7 +285,7 @@ public class ParseMain {
 			String statementString = stmt.toString();
 			boolean ret;
 			try {
-				ret = HelpCommands.parseAndPrintHelpCommand(statementString, tableManager);
+				ret = HelpCommands.parseAndPrintHelpCommand(statementString, tableManager, currentUser);
 				if (ret == false) {
 					// Help command was not found, so try to see if it is a quit command
 					ret = QuitCommand.parseAndPerformQuitCommand(statementString, tableManager);

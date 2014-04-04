@@ -4,6 +4,8 @@ import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableColumn.DataType;
 import dbms.table.TableManager;
+import dbms.table.User;
+import dbms.table.User.UserLevel;
 import dbms.table.constraints.ForeignKeyConstraint;
 import dbms.table.exceptions.HelpException;
 
@@ -19,7 +21,7 @@ public class HelpCommands {
 	 * Determine which help command was entered and execute it.
 	 * If no valid help command was entered, then return false 
 	 */
-	public static boolean parseAndPrintHelpCommand(String statementString, TableManager tableManager) throws HelpException {
+	public static boolean parseAndPrintHelpCommand(String statementString, TableManager tableManager, User currentUser) throws HelpException {
 		if (statementString == null) {
 			return false;
 		}
@@ -30,7 +32,7 @@ public class HelpCommands {
 		} else if (statementString.matches("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)describe ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 			// Get the table name from statement
 			String tableName = statementString.replaceAll("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)describe ([ \t\r\n\f]*)", "").replaceAll("(?i)([ \t\r\n\f]*);([ \t\r\n\f]*)", "");
-			printTableSchema(tableName, tableManager);
+			printTableSchema(tableName, tableManager, currentUser);
 			return true;
 		} else if (statementString.matches("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)create ([ \t\r\n\f]*)table([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 			System.out.println("Help Create Table\n-----------------");
@@ -83,10 +85,10 @@ public class HelpCommands {
 		System.out.println("");
 	}
 
-	public static void printTableSchema(String tableName, TableManager tableManager) throws HelpException {
-		
+	public static void printTableSchema(String tableName, TableManager tableManager, User currentUser) throws HelpException {
+
 		// TODO: Add parameter 'userid' and only print subschema that 'userid' is allowed to see. 
-		
+
 		System.out.println("\nHelp Describe Table\n--------------------");
 		if (!tableManager.tableExists(tableName)) {
 			throw new HelpException("Table '"+tableName+"' does not exist.");
@@ -99,38 +101,77 @@ public class HelpCommands {
 		}
 
 		// Print column names/datatypes/constraints
-		for (TableColumn column : table.getTableColumns()) {
-			// Print column name
-			System.out.print(column.getColumnName());
 
-			// Print datatype
-			if (column.getAttributeDataType() != null) {
-				if (column.getAttributeDataType() == DataType.CHAR) {
-					System.out.print(" -- char("+column.getVarCharLength()+")");
-				} else {
-					System.out.print(" -- "+column.getAttributeDataType().toString().toLowerCase());
+		if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+			for (TableColumn column : table.getTableColumns()) {
+				// Print column name
+				System.out.print(column.getColumnName());
+
+				// Print datatype
+				if (column.getAttributeDataType() != null) {
+					if (column.getAttributeDataType() == DataType.CHAR) {
+						System.out.print(" -- char("+column.getVarCharLength()+")");
+					} else {
+						System.out.print(" -- "+column.getAttributeDataType().toString().toLowerCase());
+					}
+				}
+
+				// Print the primary key constraint if this column is one
+				if (table.getPrimaryKeyConstraint().getPrimaryColumnList().contains(column)) {
+					System.out.print(" -- primary key");
+				}
+
+				// Print the foreign key constraint if this column is one
+				for (ForeignKeyConstraint foreignKey : table.getForeignKeyConstraintList()) {
+					if (foreignKey.getColumn().equals(column)) {
+						System.out.print(" -- foreign key references "+foreignKey.getReferencedTable().getTableName()+"("+foreignKey.getReferencedColumn().getColumnName()+")");
+					}
+				}
+
+				// Print domain constraints
+				if (column.getCheckConstraintList() != null) {
+					if (column.getCheckConstraintList().getFullCheckConstraintString() != null) {
+						System.out.println(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
+					}
+				} 
+				System.out.println("");
+			}
+		} else {
+			for (TableColumn column : table.getTableColumns()) {
+				if (column.getSubschemaBoolean()) {
+					// Print column name
+					System.out.print(column.getColumnName());
+
+					// Print datatype
+					if (column.getAttributeDataType() != null) {
+						if (column.getAttributeDataType() == DataType.CHAR) {
+							System.out.print(" -- char("+column.getVarCharLength()+")");
+						} else {
+							System.out.print(" -- "+column.getAttributeDataType().toString().toLowerCase());
+						}
+					}
+
+					// Print the primary key constraint if this column is one
+					if (table.getPrimaryKeyConstraint().getPrimaryColumnList().contains(column)) {
+						System.out.print(" -- primary key");
+					}
+
+					// Print the foreign key constraint if this column is one
+					for (ForeignKeyConstraint foreignKey : table.getForeignKeyConstraintList()) {
+						if (foreignKey.getColumn().equals(column)) {
+							System.out.print(" -- foreign key references "+foreignKey.getReferencedTable().getTableName()+"("+foreignKey.getReferencedColumn().getColumnName()+")");
+						}
+					}
+
+					// Print domain constraints
+					if (column.getCheckConstraintList() != null) {
+						if (column.getCheckConstraintList().getFullCheckConstraintString() != null) {
+							System.out.println(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
+						}
+					} 
+					System.out.println("");
 				}
 			}
-
-			// Print the primary key constraint if this column is one
-			if (table.getPrimaryKeyConstraint().getPrimaryColumnList().contains(column)) {
-				System.out.print(" -- primary key");
-			}
-
-			// Print the foreign key constraint if this column is one
-			for (ForeignKeyConstraint foreignKey : table.getForeignKeyConstraintList()) {
-				if (foreignKey.getColumn().equals(column)) {
-					System.out.print(" -- foreign key references "+foreignKey.getReferencedTable().getTableName()+"("+foreignKey.getReferencedColumn().getColumnName()+")");
-				}
-			}
-
-			// Print domain constraints
-			if (column.getCheckConstraintList() != null) {
-				if (column.getCheckConstraintList().getFullCheckConstraintString() != null) {
-					System.out.println(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
-				}
-			} 
-			System.out.println("");
 		}
 
 	}
