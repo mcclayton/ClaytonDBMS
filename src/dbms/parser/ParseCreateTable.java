@@ -27,7 +27,7 @@ public class ParseCreateTable {
 	 * If successful, adds the new table to the TABLE_MAP
 	 * If unsuccessful, throws an exception and table is not created.
 	 */
-	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt) throws CreateTableException, AttributeException {
+	protected static Table createTableFromStatement(TCreateTableSqlStatement pStmt, TableManager tableManager) throws CreateTableException, AttributeException {
 		tableName = pStmt.getTargetTable().toString();
 		if (tableName == null) {
 			throw new CreateTableException("Table cannot have null name.");
@@ -88,7 +88,7 @@ public class ParseCreateTable {
 		// Get table key constraints
 		if(pStmt.getTableConstraints().size() > 0) {
 			for(int i=0; i<pStmt.getTableConstraints().size(); i++) {
-				getTableKeyConstraints(pStmt.getTableConstraints().getConstraint(i), primaryKey, foreignKeyList, tableColumnList);
+				getTableKeyConstraints(pStmt.getTableConstraints().getConstraint(i), primaryKey, foreignKeyList, tableColumnList, tableManager);
 			}
 		}
 
@@ -99,7 +99,7 @@ public class ParseCreateTable {
 			throw new CreateTableException("No primary key specified for this table.", tableName);
 		}
 		table.setForeignKeyConstraintList(foreignKeyList);
-		TableManager.addTable(table.getTableName(), table);
+		tableManager.addTable(table.getTableName(), table);
 		System.out.println("Table created successfully.");
 		return table;
 	}
@@ -121,7 +121,7 @@ public class ParseCreateTable {
 	}
 
 
-	protected static void getTableKeyConstraints(TConstraint constraint, PrimaryKeyConstraint primaryKey, ArrayList<ForeignKeyConstraint> foreignKeyList, ArrayList<TableColumn> columnList) throws CreateTableException {
+	protected static void getTableKeyConstraints(TConstraint constraint, PrimaryKeyConstraint primaryKey, ArrayList<ForeignKeyConstraint> foreignKeyList, ArrayList<TableColumn> columnList, TableManager tableManager) throws CreateTableException {
 
 		switch(constraint.getConstraint_type()){
 		case primary_key:
@@ -130,7 +130,7 @@ public class ParseCreateTable {
 					throw new CreateTableException("Only one primary key or composite primary key is allowed per table.", tableName);
 				}
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
-					TableColumn column = TableManager.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
+					TableColumn column = tableManager.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
 						primaryKey.addPrimaryColumn(column);
 					} else {
@@ -141,18 +141,18 @@ public class ParseCreateTable {
 			break;
 		case foreign_key:
 		case reference:
-			if (!TableManager.tableExists(constraint.getReferencedObject().toString())) {
+			if (!tableManager.tableExists(constraint.getReferencedObject().toString())) {
 				throw new CreateTableException("Foreign key references table that does not exist.", tableName);
 			}
 
 			// Create foreign key from referenced table name
-			ForeignKeyConstraint foreignKey = new ForeignKeyConstraint(TableManager.getTable(constraint.getReferencedObject().toString()));
+			ForeignKeyConstraint foreignKey = new ForeignKeyConstraint(tableManager.getTable(constraint.getReferencedObject().toString()));
 
 			// Add the table columns to the foreign key that will reference other attributes
 			if (constraint.getColumnList() != null) {
 				for(int k=0; k<constraint.getColumnList().size(); k++) {
 					// Make sure the attribute the foreign key is specified on is in the table being created
-					TableColumn column = TableManager.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
+					TableColumn column = tableManager.getTableColumnByName(columnList, constraint.getColumnList().getObjectName(k).toString());
 					if (column != null) {
 						if (foreignKey.getColumn() != null) {
 							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
@@ -168,19 +168,19 @@ public class ParseCreateTable {
 			if (constraint.getReferencedColumnList() != null){
 				for(int k=0; k<constraint.getReferencedColumnList().size(); k++){					
 					// Make sure the attribute the foreign key references is in the table being created
-					TableColumn referencedColumn = TableManager.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
+					TableColumn referencedColumn = tableManager.getTableColumnByName(constraint.getReferencedObject().toString(), constraint.getReferencedColumnList().getObjectName(k).toString());
 					if (referencedColumn != null) {
 						TObjectName constraintObject = constraint.getColumnList().getObjectName(k);
 						if (constraintObject == null) {
 							throw new CreateTableException("Composite foreign keys are not supported.", tableName);
 						}
-						TableColumn column = TableManager.getTableColumnByName(columnList, constraintObject.toString());	
+						TableColumn column = tableManager.getTableColumnByName(columnList, constraintObject.toString());	
 						// Redundant sanity check, this is already handled above, but just wanted to make sure
 						if (column == null) {
 							throw new CreateTableException("Specifying foreign key on an invalid attribute '"+constraint.getColumnList().getObjectName(k).toString()+"'.", tableName);
 						}
 						// Make sure the referenced column is the primary key of the referenced table (must be ONLY primary key of the table i.e. not part of composite key)
-						Table referencedTable = TableManager.getTable(constraint.getReferencedObject().toString());
+						Table referencedTable = tableManager.getTable(constraint.getReferencedObject().toString());
 						if (!referencedTable.getPrimaryKeyConstraint().getPrimaryColumnList().contains(referencedColumn)) {
 							throw new CreateTableException("Foreign key on attribute '"+column.getColumnName()+"' references attribute '"+referencedColumn.getColumnName()+"' which is not a primary key.", tableName);
 						} else if (referencedTable.getPrimaryKeyConstraint().getPrimaryColumnList().size() > 1) {

@@ -10,11 +10,12 @@ import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
 import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
 import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-import dbms.table.DataBase;
 import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
@@ -37,22 +38,45 @@ public class ParseMain {
 	/* The current user */
 	public static User currentUser = null;
 
-	/* The database */
-	public static DataBase dataBase = null;
-	
 	public static void main(String args[]) {
+
+		TableManager tableManager = new TableManager();
+		try {
+			// Read from disk using FileInputStream
+			FileInputStream f_in = new FileInputStream("./Data/database.data");
+
+			// Read object using ObjectInputStream
+			ObjectInputStream obj_in = new ObjectInputStream (f_in);
+
+			// Read an object
+			Object obj = obj_in.readObject();
+
+			if (obj instanceof TableManager)
+			{
+				// Cast object to a TableManager
+				TableManager tm = (TableManager) obj;
+				tableManager = tm;
+			}
+			obj_in.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("LoadError: "+e.getMessage());
+			tableManager = new TableManager();
+		}
+
 		if (args.length < 1) {
 			System.out.println("Error: No user specified.");
-		} else if (!TableManager.getUserMap().containsKey(args[0]) && !args[0].equals("admin")) {
+		} else if (!tableManager.getUserMap().containsKey(args[0]) && !args[0].equals("admin")) {
 			System.out.println("Error: Invalid user '"+args[0]+"'.");
 		} else {
+
 			final String PROMPT_TEXT = "ClaytonDB> ";	
 
 			// Set the current user
 			if (args[0].equals("admin")) {
 				currentUser = new User("admin", UserLevel.LEVEL_ADMIN);
 			} else {
-				currentUser = TableManager.getUserMap().get(args[0]);
+				currentUser = tableManager.getUserMap().get(args[0]);
 			}
 
 			EDbVendor dbVendor = EDbVendor.dbvoracle;	// Use Oracle DB Syntax
@@ -86,7 +110,7 @@ public class ParseMain {
 					String statement = sqlparser.getSqltext();
 					// Check to see if the statement is a create subschema statement
 					if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)subschema ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) [a-zA-Z0-9_]+([ \t\r\n\f]*)(([ \t\r\n\f]*),([ \t\r\n\f]*)([a-zA-Z0-9_]+))*;([ \t\r\n\f]*)")) {
-						parseCreateSubschema(statement);
+						parseCreateSubschema(statement, tableManager);
 						emptyStatement = true;
 					} else {
 						ret = sqlparser.parse();
@@ -105,7 +129,7 @@ public class ParseMain {
 
 					for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
 						try {
-							parseAndPerformStmt(sqlparser.sqlstatements.get(i));
+							parseAndPerformStmt(sqlparser.sqlstatements.get(i), tableManager);
 						} catch (CreateTableException cTabExcept) {
 							// Parsing/Creating table was unsuccessful
 							System.out.println(cTabExcept.getMessage());
@@ -144,7 +168,7 @@ public class ParseMain {
 
 
 
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt, TableManager tableManager) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
 		String statement = stmt.toString();
 
 		switch(stmt.sqlstatementtype) {
@@ -154,26 +178,26 @@ public class ParseMain {
 				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
 				Scanner scanner = new Scanner(statement);
 				String userName = scanner.next();
-				if (TableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
+				if (tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
 					throw new CreateUserException("User '"+userName+"' already exists.");
 				}
-				TableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_A));
+				tableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_A));
 				System.out.println("User created successfully.");
 			} else if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-b([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
 				Scanner scanner = new Scanner(statement);
 				String userName = scanner.next();
-				if (TableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
+				if (tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
 					throw new CreateUserException("User '"+userName+"' already exists.");
 				}
-				TableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_B));	
+				tableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_B));	
 				System.out.println("User created successfully.");
 			} else {
 				System.out.println("UserCreate Error: Invalid user create statement.");
 			}
 			break;
 		case sstselect:
-			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt);
+			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt, tableManager);
 			break;
 		case sstdelete:
 			String deleteStatement = stmt.toString();
@@ -183,15 +207,15 @@ public class ParseMain {
 				deleteStatement = deleteStatement.replace(";", "");
 				Scanner scanner = new Scanner(deleteStatement);
 				String userName = scanner.next();
-				if (!TableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
+				if (!tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
 					throw new DeleteUserException("User '"+userName+"' does not exist.");
 				}
-				TableManager.getUserMap().remove(userName);
+				tableManager.getUserMap().remove(userName);
 				System.out.println("User deleted successfully.");
 			} else {
 				// Statement is a delete rows statement
 				try {
-					ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt);
+					ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt, tableManager);
 				} catch (Exception ex) {
 					// Gotta catch 'em all!
 					throw new DeleteRowsException(ex.getMessage());
@@ -200,7 +224,7 @@ public class ParseMain {
 			break;
 		case sstupdate:
 			try {
-				ParseUpdate.updateValuesFromStatement((TUpdateSqlStatement)stmt);
+				ParseUpdate.updateValuesFromStatement((TUpdateSqlStatement)stmt, tableManager);
 			} catch (Exception ex) {
 				// Gotta catch 'em all!
 				throw new UpdateException(ex.getMessage());
@@ -208,28 +232,28 @@ public class ParseMain {
 			break;
 		case sstinsert:
 			try {
-				ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt);
+				ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt, tableManager);
 			} catch (Exception ex) {
 				// Gotta catch 'em all!
 				throw new InsertException(ex.getMessage());
 			}
 			break;
 		case sstdroptable:
-			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt);
+			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt, tableManager);
 			break;
 		case sstcreatetable:
 			// Try to parse and create a new table
 			// New table will be added to TABLE_MAP if successful
-			ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt);
+			ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt, tableManager);
 			break;
 		case sstsqlpluscmd:
 			String statementString = stmt.toString();
 			boolean ret;
 			try {
-				ret = HelpCommands.parseAndPrintHelpCommand(statementString);
+				ret = HelpCommands.parseAndPrintHelpCommand(statementString, tableManager);
 				if (ret == false) {
 					// Help command was not found, so try to see if it is a quit command
-					ret = QuitCommand.parseAndPerformQuitCommand(statementString);
+					ret = QuitCommand.parseAndPerformQuitCommand(statementString, tableManager);
 					if (ret == false) {
 						// No Help/Quit command was matched
 						System.out.println("Parse Error: Invalid command.");	
@@ -247,16 +271,16 @@ public class ParseMain {
 	/*
 	 * Parse the create subschema statement
 	 */
-	private static void parseCreateSubschema(String statement) throws Exception {
+	private static void parseCreateSubschema(String statement, TableManager tableManager) throws Exception {
 		statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)subschema ([ \t\r\n\f]*)", "");
 		Scanner scannerForTable = new Scanner(statement);
 		String tableName = scannerForTable.next();
 
 		//Check to see if table exists
-		if (!TableManager.tableExists(tableName)) {
+		if (!tableManager.tableExists(tableName)) {
 			throw new Exception("CreateSubschema Error: Table '"+tableName+"' does not exist.");
 		}
-		Table table = TableManager.getTable(tableName);
+		Table table = tableManager.getTable(tableName);
 
 		statement = statement.replaceFirst("([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*)", "");
 		statement = statement.replaceFirst("([ \t\r\n\f]*);([ \t\r\n\f]*)", "");

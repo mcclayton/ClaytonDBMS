@@ -1,10 +1,12 @@
 package dbms.table;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 
-public class User {
+@SuppressWarnings("serial")
+public class User implements Serializable {
 	public enum UserLevel {
 	    LEVEL_A, LEVEL_B, LEVEL_ADMIN;
 	}

@@ -28,19 +28,19 @@ public class ParseUpdate {
 	 * If unsuccessful, throws an exception and values are not updated.
 	 */
 
-	protected static void updateValuesFromStatement(TUpdateSqlStatement pStmt) throws UpdateException, Exception {
+	protected static void updateValuesFromStatement(TUpdateSqlStatement pStmt, TableManager tableManager) throws UpdateException, Exception {
 		int rowsAffected = 0;
 
 		String parentTableName = null;
 		if (pStmt.getTargetTable() != null) {
 			parentTableName = pStmt.getTargetTable().toString();
-			if (!TableManager.tableExists(parentTableName)) {
+			if (!tableManager.tableExists(parentTableName)) {
 				throw new UpdateException("Table does not exist.", parentTableName);
 			}
 		}
 
 		// Get the table object being updated
-		Table parentTable = TableManager.getTable(parentTableName);
+		Table parentTable = tableManager.getTable(parentTableName);
 
 		// Get the column being updated and the value it's being updated with, check to make sure the value passes all constraints
 		TableColumn column = null;
@@ -55,7 +55,7 @@ public class ParseUpdate {
 			TExpression expression = resultColumn.getExpr();
 
 			// Get the column of table being updated
-			column = TableManager.getTableColumnByName(parentTableName, expression.getLeftOperand().toString());
+			column = tableManager.getTableColumnByName(parentTableName, expression.getLeftOperand().toString());
 			if (column == null) {
 				throw new UpdateException("Trying to update value(s) of invalid column '"+expression.getLeftOperand().toString()+"'.", parentTableName);
 			}

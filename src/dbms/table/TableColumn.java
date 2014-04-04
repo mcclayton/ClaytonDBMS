@@ -1,5 +1,6 @@
 package dbms.table;
 
+import java.io.Serializable;
 import java.util.Scanner;
 
 import dbms.table.constraints.CheckConstraintList;
@@ -8,7 +9,8 @@ import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 
 
-public class TableColumn {
+@SuppressWarnings("serial")
+public class TableColumn implements Serializable {
 
 	public enum DataType {
 	    INT, DECIMAL, CHAR, UNKNOWN

@@ -1,9 +1,11 @@
 package dbms.table;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 
-public class TableRow {
+@SuppressWarnings("serial")
+public class TableRow implements Serializable {
 	private ArrayList<Object> row;
 	
 	public TableRow(ArrayList<Object> row) {

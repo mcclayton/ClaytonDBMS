@@ -25,11 +25,11 @@ public class ParseInsert {
 	 * If unsuccessful, throws an exception and values are not inserted.
 	 */
 
-	protected static void insertValuesFromStatement(TInsertSqlStatement pStmt) throws InsertException, Exception {
+	protected static void insertValuesFromStatement(TInsertSqlStatement pStmt, TableManager tableManager) throws InsertException, Exception {
 		String tableName = null;
 		if (pStmt.getTargetTable() != null) {
 			tableName = pStmt.getTargetTable().toString();
-			if (!TableManager.tableExists(tableName)) {
+			if (!tableManager.tableExists(tableName)) {
 				throw new InsertException("Table does not exist.", tableName);
 			}
 		}
@@ -45,7 +45,7 @@ public class ParseInsert {
 		}
 
 		// Get the table object being inserted into
-		Table table = TableManager.getTable(tableName);
+		Table table = tableManager.getTable(tableName);
 
 		ArrayList<TableColumn> columnList = table.getTableColumns();
 		// Check to see if the number of values being inserted is equal to the number of columns in the table

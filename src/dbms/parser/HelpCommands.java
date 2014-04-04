@@ -19,18 +19,18 @@ public class HelpCommands {
 	 * Determine which help command was entered and execute it.
 	 * If no valid help command was entered, then return false 
 	 */
-	public static boolean parseAndPrintHelpCommand(String statementString) throws HelpException {
+	public static boolean parseAndPrintHelpCommand(String statementString, TableManager tableManager) throws HelpException {
 		if (statementString == null) {
 			return false;
 		}
 		// (?i) In regex is to make the command case insensitive
 		if (statementString.matches("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)tables([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-			printTables();
+			printTables(tableManager);
 			return true;
 		} else if (statementString.matches("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)describe ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 			// Get the table name from statement
 			String tableName = statementString.replaceAll("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)describe ([ \t\r\n\f]*)", "").replaceAll("(?i)([ \t\r\n\f]*);([ \t\r\n\f]*)", "");
-			printTableSchema(tableName);
+			printTableSchema(tableName, tableManager);
 			return true;
 		} else if (statementString.matches("(?i)([ \t\r\n\f]*)help ([ \t\r\n\f]*)create ([ \t\r\n\f]*)table([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 			System.out.println("Help Create Table\n-----------------");
@@ -71,29 +71,29 @@ public class HelpCommands {
 		}
 	}
 
-	public static void printTables() {
+	public static void printTables(TableManager tableManager) {
 		System.out.println("\nHelp Tables\n-----------");
-		if (TableManager.getTableMap().isEmpty()) {
+		if (tableManager.getTableMap().isEmpty()) {
 			System.out.println("No tables found.");
 		} else {
-			for (Table table : TableManager.getTableMap().values()) {
+			for (Table table : tableManager.getTableMap().values()) {
 				System.out.println(table.getTableName());
 			}
 		}
 		System.out.println("");
 	}
 
-	public static void printTableSchema(String tableName) throws HelpException {
+	public static void printTableSchema(String tableName, TableManager tableManager) throws HelpException {
 		
 		// TODO: Add parameter 'userid' and only print subschema that 'userid' is allowed to see. 
 		
 		System.out.println("\nHelp Describe Table\n--------------------");
-		if (!TableManager.tableExists(tableName)) {
+		if (!tableManager.tableExists(tableName)) {
 			throw new HelpException("Table '"+tableName+"' does not exist.");
 		}
 
 		// If the table does not exist, throw an exception
-		Table table = TableManager.getTable(tableName);
+		Table table = tableManager.getTable(tableName);
 		if (table == null) {
 			throw new HelpException("Table '"+tableName+"' does not exist.");
 		}

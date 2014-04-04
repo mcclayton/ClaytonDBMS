@@ -30,7 +30,7 @@ public class ParseSelect {
 	 * If unsuccessful, throws an exception and result set is not displayed
 	 */
 
-	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt) throws SelectException {
+	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt, TableManager tableManager) throws SelectException {
 		// Make sure syntax of select statement is correct
 		veryifySyntax(pStmt);
 
@@ -45,8 +45,8 @@ public class ParseSelect {
 					throw new SelectException("Aliases are not supported.");
 				}
 
-				if (TableManager.tableExists(join.getTable().toString())) {
-					tablesInFromClause.add(TableManager.getTable(join.getTable().toString()));
+				if (tableManager.tableExists(join.getTable().toString())) {
+					tablesInFromClause.add(tableManager.getTable(join.getTable().toString()));
 				} else {
 					throw new SelectException("Table '"+join.getTable().toString()+"' in FROM clause does not exist.");
 				}

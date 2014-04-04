@@ -1,5 +1,6 @@
 package dbms.table;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import dbms.table.constraints.ForeignKeyConstraint;
@@ -8,7 +9,8 @@ import dbms.table.constraints.PrimaryKeyConstraint;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
 
-public class Table {
+@SuppressWarnings("serial")
+public class Table implements Serializable {
 	
 	/* Table Components */
 	private String tableName = null;

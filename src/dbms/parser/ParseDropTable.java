@@ -19,30 +19,30 @@ public class ParseDropTable {
 	 * If successful, removes the table from the TABLE_MAP
 	 * If unsuccessful, throws an exception and table is not removed.
 	 */
-	protected static void dropTableFromStatement(TDropTableSqlStatement pStmt) throws DropTableException {
+	protected static void dropTableFromStatement(TDropTableSqlStatement pStmt, TableManager tableManager) throws DropTableException {
 		String tableName = pStmt.getTableName().toString();
 		if (tableName == null) {
 			throw new DropTableException("Table cannot have null name.");
 		}
 		
 		// Make sure the table being dropped exists.
-		Table tableBeingDropped = TableManager.getTable(tableName);
+		Table tableBeingDropped = tableManager.getTable(tableName);
 		if (tableBeingDropped == null){
 			throw new DropTableException("Table does not exist.", tableName);
 		}
 		
 		// Check if any other table has a foreign constraint specified on an attribute of this table
 		ArrayList<TableColumn> tableBeingDroppedColumns = tableBeingDropped.getTableColumns();
-		for (Table table : TableManager.getTableMap().values()) {
+		for (Table table : tableManager.getTableMap().values()) {
 			for (ForeignKeyConstraint foreignKey : table.getForeignKeyConstraintList()) {
-				if (TableManager.getTableColumnByName(tableBeingDroppedColumns, foreignKey.getReferencedColumn().getColumnName()) != null) {
+				if (tableManager.getTableColumnByName(tableBeingDroppedColumns, foreignKey.getReferencedColumn().getColumnName()) != null) {
 					throw new DropTableException("Table is referenced by a foreign key belonging to table '"+table.getTableName()+"'.", tableName);
 				}
 			}
 		}
 		
 		// Drop the table
-		TableManager.removeTable(tableName);
+		tableManager.removeTable(tableName);
 		System.out.println("Table dropped successfully.");
 	}
 

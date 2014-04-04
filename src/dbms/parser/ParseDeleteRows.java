@@ -24,19 +24,19 @@ public class ParseDeleteRows {
 	 * If unsuccessful, throws an exception and rows are not deleted.
 	 */
 
-	protected static void deleteRowsFromStatement(TDeleteSqlStatement pStmt) throws DeleteRowsException, Exception {
+	protected static void deleteRowsFromStatement(TDeleteSqlStatement pStmt, TableManager tableManager) throws DeleteRowsException, Exception {
 		int rowsAffected = 0;
 
 		String parentTableName = null;
 		if (pStmt.getTargetTable() != null) {
 			parentTableName = pStmt.getTargetTable().toString();
-			if (!TableManager.tableExists(parentTableName)) {
+			if (!tableManager.tableExists(parentTableName)) {
 				throw new DeleteRowsException("Table does not exist.", parentTableName);
 			}
 		}
 
 		// Get the table object whose rows are being deleted
-		Table parentTable = TableManager.getTable(parentTableName);
+		Table parentTable = tableManager.getTable(parentTableName);
 
 		// Parse the where clause and delete the matched rows
 		String expression = null;
