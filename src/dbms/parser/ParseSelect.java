@@ -22,7 +22,7 @@ import dbms.table.exceptions.SelectException;
 public class ParseSelect {
 
 	// TODO: Add multiple threads perhaps when crossing > 2 tables.
-	
+
 	/* 
 	 * Displays the tuples from the result set that is produced from parsing a Select Statement.
 	 * 
@@ -96,12 +96,25 @@ public class ParseSelect {
 		}
 
 		// Get the columns from the WHERE clause
-		ArrayList<String> columnNamesToCross;	// The names of all the columns that will be involved in the cross product
-		try {
-			columnNamesToCross = ParseWhereClause.getAttributeNames(pStmt.getWhereClause(), tablesInFromClause);
-		} catch (Exception e) {
-			throw new SelectException(e.getMessage());
+		ArrayList<String> columnNamesToCross = new ArrayList<String>();	// The names of all the columns that will be involved in the cross product
+		// If pStmt.getWhereClause() == null, handle this by making sure ALL columns are crossed
+		if (pStmt.getWhereClause() != null) {
+			try {
+				columnNamesToCross = ParseWhereClause.getAttributeNames(pStmt.getWhereClause(), tablesInFromClause);
+			} catch (Exception e) {
+				throw new SelectException(e.getMessage());
+			}
+		} else {
+			for (Table table : tablesInFromClause) {
+				for (TableColumn column : table.getTableColumns()) {
+					if (!columnNamesToCross.contains(column.getColumnName())) {
+						columnNamesToCross.add(column.getColumnName());
+					}
+				}
+			}
 		}
+
+
 		// Add the projected columns to columnNamesToCross if they aren't already in there
 		for (String columnName : projectionColumns) {
 			if (!columnNamesToCross.contains(columnName)) {
