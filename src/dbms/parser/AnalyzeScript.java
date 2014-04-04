@@ -47,7 +47,7 @@ public class AnalyzeScript {
 
 		TGSqlParser sqlparser = new TGSqlParser(dbVendor);
 		//sqlparser.sqlfilename = "./sql/table.sql";	// The file to be parsed. Use 'sqltext' if only single statement
-		sqlparser.sqltext = "DELETE USER user_name;";
+		sqlparser.sqltext = "CREATE SCHEMA table_name attribute1, attribute2;";
 
 		int ret = sqlparser.parse();
 		if (ret == 0){

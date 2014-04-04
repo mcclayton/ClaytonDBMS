@@ -59,7 +59,14 @@ public class ParseMain {
 			// Parse the statement
 			int ret = -1;
 			try {
-				ret = sqlparser.parse();
+				String statement = sqlparser.getSqltext();
+				// Check to see if the statement is a create subschema statement
+				if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)subschema ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) [a-zA-Z0-9_]+([ \t\r\n\f]*)(,([ \t\r\n\f]*)([a-zA-Z0-9_]+))*;([ \t\r\n\f]*)")) {
+					parseSubschema(statement);
+					emptyStatement = true;
+				} else {
+					ret = sqlparser.parse();
+				}
 			} catch(Exception nullExc) {
 				emptyStatement = true;
 			}
@@ -110,11 +117,11 @@ public class ParseMain {
 
 
 	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
+		String statement = stmt.toString();
 
 		switch(stmt.sqlstatementtype) {
 		case sstoraclecreateuser:
-			String statement = stmt.toString();
-			// TODO: Actually implement the creation of a user. Check to see if it exists before adding.
+			// If the statement is a create user statement
 			if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-a([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
 				Scanner scanner = new Scanner(statement);
@@ -142,7 +149,6 @@ public class ParseMain {
 			break;
 		case sstdelete:
 			String deleteStatement = stmt.toString();
-			// TODO: Actually implement the deletion of a user. Check to see if it exists before deleting.
 			// If the statement is a delete user statement
 			if (deleteStatement.matches("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 				deleteStatement = deleteStatement.replaceFirst("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
@@ -207,6 +213,23 @@ public class ParseMain {
 			break;
 		default:
 			System.out.println("Parse Error: Invalid command.");
+		}
+	}
+	
+	/*
+	 * Parse the create subschema statement
+	 */
+	private static void parseSubschema(String statement) {
+		statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)subschema ([ \t\r\n\f]*)", "");
+		Scanner scannerForTable = new Scanner(statement);
+		String table = scannerForTable.next();
+		statement = statement.replaceFirst("([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*)", "");
+		statement = statement.replaceFirst("([ \t\r\n\f]*);([ \t\r\n\f]*)", "");
+		String[] columnArr = statement.split("([ \t\r\n\f]*),([ \t\r\n\f]*)");
+		
+		System.out.println("Table: "+table);
+		for (String col : columnArr) {
+			System.out.println(col);
 		}
 	}
 
