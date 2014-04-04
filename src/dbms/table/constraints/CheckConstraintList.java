@@ -1,10 +1,12 @@
 package dbms.table.constraints;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 
 
-public class CheckConstraintList {
+@SuppressWarnings("serial")
+public class CheckConstraintList implements Serializable{
 	public enum LOGICAL_OPERATOR {
 		AND, OR, NONE
 	}

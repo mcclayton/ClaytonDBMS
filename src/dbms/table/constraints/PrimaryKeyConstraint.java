@@ -1,11 +1,13 @@
 package dbms.table.constraints;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import dbms.table.TableColumn;
 
 
-public class PrimaryKeyConstraint {
+@SuppressWarnings("serial")
+public class PrimaryKeyConstraint implements Serializable {
 	private ArrayList<TableColumn> primaryColumnList;	// Columns who must be not null and be unique as a whole
 	
 	public PrimaryKeyConstraint(ArrayList<TableColumn> primaryColumnList) {

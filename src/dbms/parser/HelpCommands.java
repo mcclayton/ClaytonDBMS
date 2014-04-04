@@ -130,8 +130,8 @@ public class HelpCommands {
 					System.out.println(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
 				}
 			} 
+			System.out.println("");
 		}
 
-		System.out.println("");
 	}
 }

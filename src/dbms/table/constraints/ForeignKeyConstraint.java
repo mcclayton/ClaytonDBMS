@@ -1,10 +1,13 @@
 package dbms.table.constraints;
 
+import java.io.Serializable;
+
 import dbms.table.Table;
 import dbms.table.TableColumn;
 
 
-public class ForeignKeyConstraint {
+@SuppressWarnings("serial")
+public class ForeignKeyConstraint implements Serializable {
 	private Table referencedTable = null;
 	private TableColumn referencedColumn = null;
 	private TableColumn column = null;

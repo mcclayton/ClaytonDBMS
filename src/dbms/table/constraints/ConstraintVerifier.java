@@ -1,5 +1,6 @@
 package dbms.table.constraints;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import javax.script.ScriptEngine;
@@ -16,7 +17,8 @@ import dbms.table.exceptions.InsertException;
 
 
 
-public class ConstraintVerifier {
+@SuppressWarnings("serial")
+public class ConstraintVerifier implements Serializable {
 
 	/* Domain Verification
 	 * NOTE: If attributeValue is of type char, it should be passed in without quotes

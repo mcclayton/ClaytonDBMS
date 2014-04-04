@@ -75,32 +75,28 @@ public class TableManager implements Serializable {
 		// Couldn't find column with that name
 		return null;
 	}
+	
+	
+	public void saveDatabase() {
+		try {
+			// Write to disk with FileOutputStream
+			FileOutputStream f_out = new FileOutputStream("./database.data");
+
+			// Write object with ObjectOutputStream
+			ObjectOutputStream obj_out = new ObjectOutputStream (f_out);
+
+			// Write object out to disk
+			obj_out.writeObject(this);
+			obj_out.close();
+		} catch (Exception e) {
+			System.out.println("QuitError: "+e.getMessage());
+		}
+	}
 
 
 	/* Getters and Setters */
 	public HashMap<String, Table> getTableMap() {return TABLE_MAP;}
 	public HashMap<String, User> getUserMap() {return USER_MAP;}
 
-
-
-
-
-
-	public void saveDatabase() {
-		try {
-			// Write to disk with FileOutputStream
-			FileOutputStream f_out = new FileOutputStream("./Data/database.data");
-
-			// Write object with ObjectOutputStream
-			ObjectOutputStream obj_out = new ObjectOutputStream (f_out);
-
-			// Write object out to disk
-			obj_out.writeObject ( this );
-			obj_out.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("QuitError: "+e.getMessage());
-		}
-	}
 	
 }

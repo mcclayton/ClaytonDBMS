@@ -1,8 +1,11 @@
 package dbms.table.constraints;
 
+import java.io.Serializable;
 
 
-public class CheckConstraint {
+
+@SuppressWarnings("serial")
+public class CheckConstraint implements Serializable {
 	private String parentTableName = null;
 	private String parentColumnName = null;			// Column on which the constraint is being placed on
 	private String operator = null;					// String representation of the operator

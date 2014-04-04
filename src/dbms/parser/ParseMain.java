@@ -40,10 +40,11 @@ public class ParseMain {
 
 	public static void main(String args[]) {
 
+		// Load previous database if there is one
 		TableManager tableManager = new TableManager();
 		try {
 			// Read from disk using FileInputStream
-			FileInputStream f_in = new FileInputStream("./Data/database.data");
+			FileInputStream f_in = new FileInputStream("./database.data");
 
 			// Read object using ObjectInputStream
 			ObjectInputStream obj_in = new ObjectInputStream (f_in);
@@ -59,8 +60,6 @@ public class ParseMain {
 			}
 			obj_in.close();
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("LoadError: "+e.getMessage());
 			tableManager = new TableManager();
 		}
 
@@ -112,6 +111,7 @@ public class ParseMain {
 					if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)subschema ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) [a-zA-Z0-9_]+([ \t\r\n\f]*)(([ \t\r\n\f]*),([ \t\r\n\f]*)([a-zA-Z0-9_]+))*;([ \t\r\n\f]*)")) {
 						parseCreateSubschema(statement, tableManager);
 						emptyStatement = true;
+						System.out.println("Subschema successfully created/updated.");
 					} else {
 						ret = sqlparser.parse();
 					}
@@ -129,7 +129,7 @@ public class ParseMain {
 
 					for(int i=0; i<sqlparser.sqlstatements.size(); i++) {
 						try {
-							parseAndPerformStmt(sqlparser.sqlstatements.get(i), tableManager);
+							shouldQuit = parseAndPerformStmt(sqlparser.sqlstatements.get(i), tableManager);
 						} catch (CreateTableException cTabExcept) {
 							// Parsing/Creating table was unsuccessful
 							System.out.println(cTabExcept.getMessage());
@@ -168,83 +168,118 @@ public class ParseMain {
 
 
 
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt, TableManager tableManager) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
+	protected static boolean parseAndPerformStmt(TCustomSqlStatement stmt, TableManager tableManager) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
 		String statement = stmt.toString();
 
 		switch(stmt.sqlstatementtype) {
 		case sstoraclecreateuser:
-			// If the statement is a create user statement
-			if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-a([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
-				Scanner scanner = new Scanner(statement);
-				String userName = scanner.next();
-				if (tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
-					throw new CreateUserException("User '"+userName+"' already exists.");
+			// Must be an admin to run
+			if (currentUser.getUserLevel() == UserLevel.LEVEL_ADMIN) {
+				// If the statement is a create user statement
+				if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-a([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
+					statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
+					Scanner scanner = new Scanner(statement);
+					String userName = scanner.next();
+					if (tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
+						throw new CreateUserException("User '"+userName+"' already exists.");
+					}
+					tableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_A));
+					System.out.println("User created successfully.");
+				} else if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-b([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
+					statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
+					Scanner scanner = new Scanner(statement);
+					String userName = scanner.next();
+					if (tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
+						throw new CreateUserException("User '"+userName+"' already exists.");
+					}
+					tableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_B));	
+					System.out.println("User created successfully.");
+				} else {
+					System.out.println("UserCreate Error: Invalid user create statement.");
 				}
-				tableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_A));
-				System.out.println("User created successfully.");
-			} else if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-b([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
-				Scanner scanner = new Scanner(statement);
-				String userName = scanner.next();
-				if (tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
-					throw new CreateUserException("User '"+userName+"' already exists.");
-				}
-				tableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_B));	
-				System.out.println("User created successfully.");
 			} else {
-				System.out.println("UserCreate Error: Invalid user create statement.");
+				System.out.println("Error: Authorization failure.");
 			}
 			break;
 		case sstselect:
 			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt, tableManager);
 			break;
 		case sstdelete:
-			String deleteStatement = stmt.toString();
-			// If the statement is a delete user statement
-			if (deleteStatement.matches("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
-				deleteStatement = deleteStatement.replaceFirst("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
-				deleteStatement = deleteStatement.replace(";", "");
-				Scanner scanner = new Scanner(deleteStatement);
-				String userName = scanner.next();
-				if (!tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
-					throw new DeleteUserException("User '"+userName+"' does not exist.");
+			// Level-B users cannot issue this command
+			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+				String deleteStatement = stmt.toString();
+				// If the statement is a delete user statement
+				if (deleteStatement.matches("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
+					// Must be an admin to run
+					if (currentUser.getUserLevel() == UserLevel.LEVEL_ADMIN) {
+						deleteStatement = deleteStatement.replaceFirst("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
+						deleteStatement = deleteStatement.replace(";", "");
+						Scanner scanner = new Scanner(deleteStatement);
+						String userName = scanner.next();
+						if (!tableManager.getUserMap().containsKey(userName) || userName.equals("admin")) {
+							throw new DeleteUserException("User '"+userName+"' does not exist.");
+						}
+						tableManager.getUserMap().remove(userName);
+						System.out.println("User deleted successfully.");
+					} else {
+						System.out.println("Error: Authorization failure.");
+					}
+				} else {
+					// Statement is a delete rows statement
+					try {
+						ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt, tableManager);
+					} catch (Exception ex) {
+						// Gotta catch 'em all!
+						throw new DeleteRowsException(ex.getMessage());
+					}
 				}
-				tableManager.getUserMap().remove(userName);
-				System.out.println("User deleted successfully.");
 			} else {
-				// Statement is a delete rows statement
-				try {
-					ParseDeleteRows.deleteRowsFromStatement((TDeleteSqlStatement)stmt, tableManager);
-				} catch (Exception ex) {
-					// Gotta catch 'em all!
-					throw new DeleteRowsException(ex.getMessage());
-				}
+				System.out.println("Error: Authorization failure.");
 			}
 			break;
 		case sstupdate:
-			try {
-				ParseUpdate.updateValuesFromStatement((TUpdateSqlStatement)stmt, tableManager);
-			} catch (Exception ex) {
-				// Gotta catch 'em all!
-				throw new UpdateException(ex.getMessage());
+			// Level-B users cannot issue this command
+			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+				try {
+					ParseUpdate.updateValuesFromStatement((TUpdateSqlStatement)stmt, tableManager);
+				} catch (Exception ex) {
+					// Gotta catch 'em all!
+					throw new UpdateException(ex.getMessage());
+				}
+			} else {
+				System.out.println("Error: Authorization failure.");
 			}
 			break;
 		case sstinsert:
-			try {
-				ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt, tableManager);
-			} catch (Exception ex) {
-				// Gotta catch 'em all!
-				throw new InsertException(ex.getMessage());
+			// Level-B users cannot issue this command
+			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+				try {
+					ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt, tableManager);
+				} catch (Exception ex) {
+					// Gotta catch 'em all!
+					throw new InsertException(ex.getMessage());
+				}
+			} else {
+				System.out.println("Error: Authorization failure.");	
 			}
 			break;
 		case sstdroptable:
-			ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt, tableManager);
+			// Level-B users cannot issue this command
+			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+				ParseDropTable.dropTableFromStatement((TDropTableSqlStatement) stmt, tableManager);
+			} else {
+				System.out.println("Error: Authorization failure.");
+			}
 			break;
 		case sstcreatetable:
-			// Try to parse and create a new table
-			// New table will be added to TABLE_MAP if successful
-			ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt, tableManager);
+			// Level-B users cannot issue this command
+			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+				// Try to parse and create a new table
+				// New table will be added to TABLE_MAP if successful
+				ParseCreateTable.createTableFromStatement((TCreateTableSqlStatement) stmt, tableManager);
+			} else {
+				System.out.println("Error: Authorization failure.");
+			}
 			break;
 		case sstsqlpluscmd:
 			String statementString = stmt.toString();
@@ -257,6 +292,8 @@ public class ParseMain {
 					if (ret == false) {
 						// No Help/Quit command was matched
 						System.out.println("Parse Error: Invalid command.");	
+					} else {
+						return true;
 					}
 				}
 			} catch (HelpException e) {
@@ -266,6 +303,7 @@ public class ParseMain {
 		default:
 			System.out.println("Parse Error: Invalid command.");
 		}
+		return false;
 	}
 
 	/*
