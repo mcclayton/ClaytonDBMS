@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 public class User {
 	public enum UserLevel {
-	    LEVEL_A, LEVEL_B
+	    LEVEL_A, LEVEL_B, LEVEL_ADMIN;
 	}
 	
 	private String userName;

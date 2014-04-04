@@ -20,6 +20,9 @@ public class TableColumn {
 	/* Column Constraints */
 	DataType attributeDataType = null;		// The type of attribute
 	int	varCharLength = 0;					// Length constraint if type is of varchar()
+	
+	/* Boolean that determines if this column is part of subschema */
+	private boolean isSubschema = false;
 
 	public TableColumn(String relationName, String attributeName, String attributeTypeString, CheckConstraintList checkConstraintList) throws CreateTableException, AttributeException {
 		this.relationName = relationName;
@@ -77,4 +80,8 @@ public class TableColumn {
 	public DataType getAttributeDataType() {return this.attributeDataType;}
 	public CheckConstraintList getCheckConstraintList() {return this.checkConstraintList;}
 	public int getVarCharLength() {return this.varCharLength;}
+	public boolean getSubschemaBoolean() {return this.isSubschema;}
+	
+	
+	public void setSubschemaBoolean(boolean bool) {this.isSubschema = bool;}
 }

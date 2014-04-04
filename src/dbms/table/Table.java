@@ -19,6 +19,8 @@ public class Table {
 	private PrimaryKeyConstraint primaryKey = null;
 	private ArrayList<ForeignKeyConstraint> foreignKeyList = null;
 	
+	/* Array list of columns that are in the subschema (No subschema if isEmpty() == true) */
+	private ArrayList<TableColumn> subschemaColumnList = new ArrayList<TableColumn>();
 	
 	/*				col_index_0		col_index_1
 	 *  			|-------------|-------------|...
@@ -77,8 +79,14 @@ public class Table {
 		this.tableColumns.add(column);
 	}
 	
+	public void resetAndClearSubschemaList() {
+		for (TableColumn col : this.subschemaColumnList) {
+			col.setSubschemaBoolean(false);
+		}
+		this.subschemaColumnList.clear();
+	}
 	
-	
+		
 	/* Getters and Setters */
 	public String getTableName() {return this.tableName;}
 	public ArrayList<TableColumn> getTableColumns() {return this.tableColumns;}
@@ -97,6 +105,8 @@ public class Table {
 	public TableRow getTableRow(int index) {return this.tableRows.get(index);}
 	public PrimaryKeyConstraint getPrimaryKeyConstraint() {return this.primaryKey;}
 	public ArrayList<ForeignKeyConstraint> getForeignKeyConstraintList() {return this.foreignKeyList;}
+	public ArrayList<TableColumn> getSubschemaList() {return this.subschemaColumnList;}
+
 	
 	
 	public void setPrimaryKeyConstraint(PrimaryKeyConstraint primaryKey) {this.primaryKey = primaryKey;}
