@@ -10,6 +10,9 @@ public class TableManager {
 
 	// Key is Table Name, value is table
 	private static final HashMap<String, Table> TABLE_MAP = new HashMap<String, Table>();	// Map of all existing tables
+	
+	// Key is userName, value is User object
+	private static final HashMap<String, User> USER_MAP = new HashMap<String, User>();	// Map of all user, which contain subschema information
 
 
 	public static Table getTable(String tableName) {
@@ -67,4 +70,5 @@ public class TableManager {
 
 	/* Getters and Setters */
 	public static HashMap<String, Table> getTableMap() {return TABLE_MAP;}
+	public static HashMap<String, User> getUserMap() {return USER_MAP;}
 }

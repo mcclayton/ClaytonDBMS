@@ -13,9 +13,14 @@ import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
+import dbms.table.TableManager;
+import dbms.table.User;
+import dbms.table.User.UserLevel;
 import dbms.table.exceptions.AttributeException;
 import dbms.table.exceptions.CreateTableException;
+import dbms.table.exceptions.CreateUserException;
 import dbms.table.exceptions.DeleteRowsException;
+import dbms.table.exceptions.DeleteUserException;
 import dbms.table.exceptions.DropTableException;
 import dbms.table.exceptions.HelpException;
 import dbms.table.exceptions.InsertException;
@@ -88,6 +93,12 @@ public class ParseMain {
 					} catch (SelectException selectExcept) {
 						// Query was unsuccessful
 						System.out.println(selectExcept.getMessage());
+					} catch (CreateUserException createUserExc) {
+						// Create user was unsuccessful
+						System.out.println(createUserExc.getMessage());
+					} catch (DeleteUserException deleteUserExc) {
+						// Delete user was unsuccessful
+						System.out.println(deleteUserExc.getMessage());
 					}
 				}
 			} else {
@@ -98,7 +109,7 @@ public class ParseMain {
 
 
 
-	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException{
+	protected static void parseAndPerformStmt(TCustomSqlStatement stmt) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
 
 		switch(stmt.sqlstatementtype) {
 		case sstoraclecreateuser:
@@ -107,13 +118,21 @@ public class ParseMain {
 			if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-a([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
 				Scanner scanner = new Scanner(statement);
-				String user = scanner.next();
-				System.out.println("CREATING USER '"+user+"' OF TYPE A. ");
+				String userName = scanner.next();
+				if (TableManager.getUserMap().containsKey(userName)) {
+					throw new CreateUserException("User '"+userName+"' already exists.");
+				}
+				TableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_A));
+				System.out.println("User created successfully.");
 			} else if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) user-b([ \t\r\n\f]*);([ \t\r\n\f]*)")) {
 				statement = statement.replaceFirst("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
 				Scanner scanner = new Scanner(statement);
-				String user = scanner.next();
-				System.out.println("CREATING USER '"+user+"' OF TYPE B. ");				
+				String userName = scanner.next();
+				if (TableManager.getUserMap().containsKey(userName)) {
+					throw new CreateUserException("User '"+userName+"' already exists.");
+				}
+				TableManager.getUserMap().put(userName, new User(userName, UserLevel.LEVEL_B));	
+				System.out.println("User created successfully.");
 			} else {
 				System.out.println("UserCreate Error: Invalid user create statement.");
 			}
@@ -129,8 +148,12 @@ public class ParseMain {
 				deleteStatement = deleteStatement.replaceFirst("(?i)([ \t\r\n\f]*)delete ([ \t\r\n\f]*)user ([ \t\r\n\f]*)", "");
 				deleteStatement = deleteStatement.replace(";", "");
 				Scanner scanner = new Scanner(deleteStatement);
-				String user = scanner.next();
-				System.out.println("Deleting a user '"+user+"'.");
+				String userName = scanner.next();
+				if (!TableManager.getUserMap().containsKey(userName)) {
+					throw new DeleteUserException("User '"+userName+"' does not exist.");
+				}
+				TableManager.getUserMap().remove(userName);
+				System.out.println("User deleted successfully.");
 			} else {
 				// Statement is a delete rows statement
 				try {
