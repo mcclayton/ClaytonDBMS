@@ -328,18 +328,19 @@ public class ParseMain {
 		statement = statement.replaceFirst("([ \t\r\n\f]*);([ \t\r\n\f]*)", "");
 		String[] columnArr = statement.split("([ \t\r\n\f]*),([ \t\r\n\f]*)");
 
+		// Make sure each column is valid then add it to the table's subschema column list
+		for (String colName : columnArr) {
+			if (table.getTableColumnByName(colName) == null) {
+				throw new Exception("CreateSubschema Error: Invalid attribute '"+colName+"'.");
+			}
+		}
 		ArrayList<TableColumn> subschemaColumnList = table.getSubschemaList();
 		// Reset the column boolean values and clear them from the subschema list
 		table.resetAndClearSubschemaList();
 
-		// Make sure each column is valid then add it to the table's subschema column list
 		for (String colName : columnArr) {
-			if (table.getTableColumnByName(colName) != null) {
-				table.getTableColumnByName(colName).setSubschemaBoolean(true);
-				subschemaColumnList.add(table.getTableColumnByName(colName));
-			} else {
-				throw new Exception("CreateSubschema Error: Invalid attribute '"+colName+"'.");
-			}
+			table.getTableColumnByName(colName).setSubschemaBoolean(true);
+			subschemaColumnList.add(table.getTableColumnByName(colName));
 		}
 	}
 

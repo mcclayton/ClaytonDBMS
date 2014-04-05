@@ -137,8 +137,9 @@ public class HelpCommands {
 				System.out.println("");
 			}
 		} else {
+			// User is User-B
 			for (TableColumn column : table.getTableColumns()) {
-				if (column.getSubschemaBoolean()) {
+				if (column.getSubschemaBoolean() == true || table.getSubschemaList().isEmpty()) {
 					// Print column name
 					System.out.print(column.getColumnName());
 
@@ -166,7 +167,7 @@ public class HelpCommands {
 					// Print domain constraints
 					if (column.getCheckConstraintList() != null) {
 						if (column.getCheckConstraintList().getFullCheckConstraintString() != null) {
-							System.out.println(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
+							System.out.print(" -- "+column.getCheckConstraintList().getFullCheckConstraintString());
 						}
 					} 
 					System.out.println("");

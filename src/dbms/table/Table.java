@@ -82,7 +82,7 @@ public class Table implements Serializable {
 	}
 	
 	public void resetAndClearSubschemaList() {
-		for (TableColumn col : this.subschemaColumnList) {
+		for (TableColumn col : this.tableColumns) {
 			col.setSubschemaBoolean(false);
 		}
 		this.subschemaColumnList.clear();
