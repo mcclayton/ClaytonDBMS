@@ -20,4 +20,4 @@ Remove this file to clear the persisted data.
 GENERAL INFO
 ------------  
 1. It should be noted that I used the GeneralSQLParser library as the basis of my SQL parsing (which I was told was ok to do).  
-2. 2. Table/attribute names are case sensitive.
+2. Table/attribute names are case sensitive.
