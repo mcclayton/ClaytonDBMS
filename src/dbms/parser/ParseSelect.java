@@ -326,6 +326,7 @@ public class ParseSelect {
 		}
 
 		// Print all columns of result
+		System.out.println("");
 		if (asteriskFlag) {
 			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
 				for (TableColumn column : allTablesColumns) {
@@ -375,6 +376,7 @@ public class ParseSelect {
 			System.out.println();
 
 			// Print the rows, but only the ones that are projected
+			System.out.println("");
 			for (TableRow row : rowsToPrint) {
 				for (Integer projectionIndex : projectionIndexes) {
 					System.out.print(row.getElement(projectionIndex)+"\t");

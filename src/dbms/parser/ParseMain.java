@@ -111,7 +111,7 @@ public class ParseMain {
 					if (statement.matches("(?i)([ \t\r\n\f]*)create ([ \t\r\n\f]*)subschema ([ \t\r\n\f]*)[a-zA-Z0-9_]+([ \t\r\n\f]*) [a-zA-Z0-9_]+([ \t\r\n\f]*)(([ \t\r\n\f]*),([ \t\r\n\f]*)([a-zA-Z0-9_]+))*;([ \t\r\n\f]*)")) {
 						parseCreateSubschema(statement, tableManager);
 						emptyStatement = true;
-						System.out.println("Subschema successfully created/updated.");
+						System.out.println("Subschema created successfully.");
 					} else {
 						ret = sqlparser.parse();
 					}
