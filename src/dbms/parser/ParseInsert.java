@@ -110,6 +110,7 @@ public class ParseInsert {
 				row.add(value);
 			}
 			
+			
 			// Check primary key constraints
 			if(!ConstraintVerifier.passesPrimaryKeyConstraint(table, row)) {
 				throw new InsertException("Primary key constraint violated.", tableName); 

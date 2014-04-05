@@ -157,6 +157,8 @@ public class ParseMain {
 						} catch (DeleteUserException deleteUserExc) {
 							// Delete user was unsuccessful
 							System.out.println(deleteUserExc.getMessage());
+						} catch (Exception e) {
+							System.out.println(e.getMessage());
 						}
 					}
 				} else {
@@ -168,7 +170,7 @@ public class ParseMain {
 
 
 
-	protected static boolean parseAndPerformStmt(TCustomSqlStatement stmt, TableManager tableManager) throws CreateTableException, AttributeException, DropTableException, InsertException, UpdateException, DeleteRowsException, SelectException, CreateUserException, DeleteUserException{
+	protected static boolean parseAndPerformStmt(TCustomSqlStatement stmt, TableManager tableManager) throws Exception{
 		String statement = stmt.toString();
 
 		switch(stmt.sqlstatementtype) {
@@ -255,6 +257,8 @@ public class ParseMain {
 			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
 				try {
 					ParseInsert.insertValuesFromStatement((TInsertSqlStatement)stmt, tableManager);
+				} catch (InsertException iExc) {
+					throw new Exception(iExc.getMessage());
 				} catch (Exception ex) {
 					// Gotta catch 'em all!
 					throw new InsertException(ex.getMessage());

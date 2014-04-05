@@ -119,16 +119,21 @@ public class ConstraintVerifier implements Serializable {
 					foreignKeyValue = (String) row.get(index);			// Get the value of the row corresponding to this column
 
 					// Get referenced table
+					boolean foundMatch = false;
 					Table referencedTable = foreignKey.getReferencedTable();
 					int referencedColumnIndex = referencedTable.getTableColumns().indexOf(foreignKey.getReferencedColumn());
 					for (TableRow referencedRow : referencedTable.getTableRows()) {
 						if (foreignKeyValue.equals((String) referencedRow.getElement(referencedColumnIndex))) {
-							return true;
+							foundMatch = true;
+							break;
 						}
+					}
+					if (foundMatch == false) {
+						return false;
 					}
 				}
 			}
-			return false;
+			return true;
 		} else {
 			return true;
 		}
