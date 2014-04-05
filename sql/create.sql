@@ -1,7 +1,0 @@
-CREATE TABLE DEPARTMENT(deptid INT CHECK(deptid>0 AND deptid<100), dname CHAR(30), location CHAR(30), PRIMARY KEY(deptid));
-CREATE TABLE FACULTY(fid INT CHECK(fid!=0), fname CHAR(30), dept INT, PRIMARY KEY(fid), FOREIGN KEY(dept) REFERENCES DEPARTMENT(deptid));
-CREATE TABLE STUDENT(snum INT, sname CHAR(30), dep INT, slevel CHAR(10) CHECK(slevel='JR' OR slevel='SR' OR slevel='SO' OR slevel='FR'), age INT CHECK(age>16), PRIMARY KEY(snum), FOREIGN KEY (dep) REFERENCES DEPARTMENT(deptid));
-CREATE TABLE CLASS(cname CHAR(30), meets_at CHAR(30), room CHAR(10), faculty_id INT, PRIMARY KEY(cname), FOREIGN KEY(faculty_id) REFERENCES FACULTY(fid));
-CREATE TABLE ENROLLED(student_num INT, class_name CHAR(30), PRIMARY KEY(student_num, class_name), FOREIGN KEY(student_num) REFERENCES STUDENT(snum), FOREIGN KEY(class_name) REFERENCES CLASS(cname));
-CREATE TABLE ENROLLED(student_num INT, class_name CHAR(30), PRIMARY KEY(student_num, class_name), FOREIGN KEY(student_num) REFERENCES STUDENT(snum), FOREIGN KEY(class_name) REFERENCES CLASS(cname));
-CREATE TABLE GRADE(student_num INT, class_name CHAR(30), PRIMARY KEY(student_num, class_name), FOREIGN KEY(student_num) REFERENCES STUDENT(num), FOREIGN KEY(class_name) REFERENCES CLASS(cname));
