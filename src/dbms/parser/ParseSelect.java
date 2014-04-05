@@ -16,6 +16,8 @@ import dbms.table.Table;
 import dbms.table.TableColumn;
 import dbms.table.TableManager;
 import dbms.table.TableRow;
+import dbms.table.User;
+import dbms.table.User.UserLevel;
 import dbms.table.exceptions.SelectException;
 
 
@@ -30,7 +32,7 @@ public class ParseSelect {
 	 * If unsuccessful, throws an exception and result set is not displayed
 	 */
 
-	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt, TableManager tableManager) throws SelectException {
+	protected static void parseAndPrintSelect(TSelectSqlStatement pStmt, TableManager tableManager, User currentUser) throws SelectException {
 		// Make sure syntax of select statement is correct
 		veryifySyntax(pStmt);
 
@@ -85,8 +87,12 @@ public class ParseSelect {
 				columnNameInSelect = resultColumn.getExpr().toString();
 				for (Table table : tablesInFromClause) {
 					if (table.getTableColumnByName(columnNameInSelect) != null) {
-						projectionColumns.add(columnNameInSelect);
-						validColumn = true;
+						if (currentUser.getUserLevel() == UserLevel.LEVEL_B && table.getTableColumnByName(columnNameInSelect).getSubschemaBoolean() == true) {
+							throw new SelectException("Invalid attribute '"+columnNameInSelect+"'.");
+						} else {
+							projectionColumns.add(columnNameInSelect);
+							validColumn = true;
+						}
 					}
 				}
 				if (!validColumn) {
@@ -150,7 +156,7 @@ public class ParseSelect {
 
 		// Print each of the selected rows that pass the where clause
 		try {
-			printSelectRows(masterRowList, allTableColumns, projectionColumns, expression, asteriskFlag);
+			printSelectRows(masterRowList, allTableColumns, projectionColumns, expression, asteriskFlag, currentUser);
 		} catch (Exception e) {
 			throw new SelectException(e.getMessage());
 		} 
@@ -291,7 +297,7 @@ public class ParseSelect {
 	 * 
 	 * Returns the number of rows printed
 	 */
-	public static int printSelectRows(ArrayList<TableRow> allTablesRows, ArrayList<TableColumn> allTablesColumns, ArrayList<String> projectedColumnNames, String whereClause, boolean asteriskFlag) throws Exception {
+	public static int printSelectRows(ArrayList<TableRow> allTablesRows, ArrayList<TableColumn> allTablesColumns, ArrayList<String> projectedColumnNames, String whereClause, boolean asteriskFlag, User currentUser) throws Exception {
 		int rowsAffected = 0;
 		ScriptEngineManager mgr = new ScriptEngineManager();
 		ScriptEngine engine = mgr.getEngineByName("JavaScript");
@@ -321,16 +327,40 @@ public class ParseSelect {
 
 		// Print all columns of result
 		if (asteriskFlag) {
-			for (TableColumn column : allTablesColumns) {
-				System.out.print(column.getColumnName()+"\t");
-			}
-			System.out.println();
-			for (TableRow row : rowsToPrint) {
-				for (Object element : row.getElementList()) {
-					System.out.print(element+"\t");
+			if (currentUser.getUserLevel() != UserLevel.LEVEL_B) {
+				for (TableColumn column : allTablesColumns) {
+					System.out.print(column.getColumnName()+"\t");
 				}
 				System.out.println();
+				for (TableRow row : rowsToPrint) {
+					for (Object element : row.getElementList()) {
+						System.out.print(element+"\t");
+					}
+					System.out.println();
+				}
+			} else {
+				// Print all columns in subschema
+				ArrayList<Boolean> boolList = new ArrayList<Boolean>();
+				for (TableColumn column : allTablesColumns) {
+					boolList.add(column.getSubschemaBoolean());
+					if (column.getSubschemaBoolean() == true) {
+						System.out.print(column.getColumnName()+"\t");
+					}
+				}
+				System.out.println();
+				for (TableRow row : rowsToPrint) {
+					for (int i=0; i<row.getElementList().size(); i++) {
+						if (boolList.get(i) == true) {
+							System.out.print(row.getElement(i)+"\t");
+						}
+					}
+					System.out.println();
+				}
+
+
 			}
+
+
 		} else {
 			// Get the indexes of columns to project onto the rows
 			ArrayList<Integer> projectionIndexes = new ArrayList<Integer>();

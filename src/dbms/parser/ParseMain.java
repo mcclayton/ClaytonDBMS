@@ -202,7 +202,7 @@ public class ParseMain {
 			}
 			break;
 		case sstselect:
-			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt, tableManager);
+			ParseSelect.parseAndPrintSelect((TSelectSqlStatement)stmt, tableManager, currentUser);
 			break;
 		case sstdelete:
 			// Level-B users cannot issue this command
