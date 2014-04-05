@@ -81,10 +81,17 @@ public class Table implements Serializable {
 		this.tableColumns.add(column);
 	}
 	
-	public void resetAndClearSubschemaList() {
+	/*
+	 * Sets the boolean value for subschema in all table's columns
+	 */
+	public void setAllSubschemaBoolean(boolean bool) {
 		for (TableColumn col : this.tableColumns) {
-			col.setSubschemaBoolean(false);
+			col.setSubschemaBoolean(bool);
 		}
+		this.subschemaColumnList.clear();
+	}
+	
+	public void clearSubschemaList() {
 		this.subschemaColumnList.clear();
 	}
 	

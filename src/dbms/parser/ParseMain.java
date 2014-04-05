@@ -335,9 +335,11 @@ public class ParseMain {
 			}
 		}
 		ArrayList<TableColumn> subschemaColumnList = table.getSubschemaList();
-		// Reset the column boolean values and clear them from the subschema list
-		table.resetAndClearSubschemaList();
-
+		// Reset the column boolean values to false and clear them from the subschema list
+		table.setAllSubschemaBoolean(false);
+		table.clearSubschemaList();
+		
+		// Re-create the subschema list
 		for (String colName : columnArr) {
 			table.getTableColumnByName(colName).setSubschemaBoolean(true);
 			subschemaColumnList.add(table.getTableColumnByName(colName));

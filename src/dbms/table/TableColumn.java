@@ -24,7 +24,7 @@ public class TableColumn implements Serializable {
 	int	varCharLength = 0;					// Length constraint if type is of varchar()
 	
 	/* Boolean that determines if this column is part of subschema */
-	private boolean isSubschema = false;
+	private boolean isSubschema = true;	// Initialize to true because default is that no subschema is provided
 
 	public TableColumn(String relationName, String attributeName, String attributeTypeString, CheckConstraintList checkConstraintList) throws CreateTableException, AttributeException {
 		this.relationName = relationName;

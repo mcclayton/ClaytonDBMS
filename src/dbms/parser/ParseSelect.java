@@ -87,7 +87,7 @@ public class ParseSelect {
 				columnNameInSelect = resultColumn.getExpr().toString();
 				for (Table table : tablesInFromClause) {
 					if (table.getTableColumnByName(columnNameInSelect) != null) {
-						if (currentUser.getUserLevel() == UserLevel.LEVEL_B && table.getTableColumnByName(columnNameInSelect).getSubschemaBoolean() == true) {
+						if (currentUser.getUserLevel() == UserLevel.LEVEL_B && table.getTableColumnByName(columnNameInSelect).getSubschemaBoolean() == false) {
 							throw new SelectException("Invalid attribute '"+columnNameInSelect+"'.");
 						} else {
 							projectionColumns.add(columnNameInSelect);
